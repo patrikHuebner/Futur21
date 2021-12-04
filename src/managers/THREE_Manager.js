@@ -71,7 +71,6 @@ export default class THREE_Manager {
 
         // Attach renderer to DOM
         this.parentContainer.appendChild(this.renderer.domElement);
-
     }
 
 
@@ -87,6 +86,7 @@ export default class THREE_Manager {
     init_camera() {
         this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
         this.camera.position.set(this.store.state.camera.position.x, this.store.state.camera.position.y, this.store.state.camera.position.z);
+        this.camera.rotation.set(this.store.state.camera.rotation.x, this.store.state.camera.rotation.y, this.store.state.camera.rotation.z);
         this.camera.fov = this.store.state.camera.position.fov;
     }
 
@@ -112,6 +112,11 @@ export default class THREE_Manager {
             this.angleRadians = Math.atan2(this.remote.y - this.origin.y, this.remote.x - this.origin.x);
             this.controls.maxPolarAngle = this.angleRadians;
         }
+
+        this.controls.target.x = this.store.state.camera.target.x;
+        this.controls.target.y = this.store.state.camera.target.y;
+        this.controls.target.z = this.store.state.camera.target.z;
+        this.controls.update();
     }
 
 

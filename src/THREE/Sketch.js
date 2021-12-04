@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { radians } from '@/utils/utils.js';
 const glsl = require('glslify');
 
@@ -8,6 +9,8 @@ export default class Sketch {
 
     constructor(args) {
         this.three = args.threeManager;
+        this.mixer = null;
+        this.clock = new THREE.Clock();
         this.init();
     }
 
@@ -16,13 +19,17 @@ export default class Sketch {
 
     init() {
         this.initLights();
-        this.addHeadGeometry();
-        // this.addGeometry();
+        this.createShaderMaterial();
+        // this.loadThinkerModel();
+        this.addGround();
+        this.loadFBX();
     }
 
 
     animate() {
+        this.animateFBX();
         this.animateShader();
+        // this.rotateScene();
     }
 
 
@@ -32,21 +39,8 @@ export default class Sketch {
 
     // METHODS ---------------------------------------------------------------------------------------------
 
-    initLights() {
-        // Directional Light 1
-        this.directionalLight1 = new THREE.DirectionalLight(0xffffff, 1);
-        this.directionalLight1.position.set(10, 10, 5);
-        this.three.scene.add(this.directionalLight1);
 
-        // Directional Light 2
-        this.directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
-        this.directionalLight2.position.set(-10, -10, -5);
-        this.three.scene.add(this.directionalLight2);
-    }
-
-
-
-    addHeadGeometry() {
+    createShaderMaterial() {
         // ShaderMaterial
         const uniforms = {
             time: { type: "f", value: 0 },
@@ -60,43 +54,117 @@ export default class Sketch {
             horizontalMovement: { type: "vec2", value: new THREE.Vector2(0.3, 3.) },
             verticalMovement: { type: "vec2", value: new THREE.Vector2(0.3, 3.) },
         };
-        // const uniforms = {
-        //     time: { type: 'f', value: 0 },
-        // }
         this.shaderMaterial = new THREE.ShaderMaterial({
             uniforms: uniforms,
             vertexShader: glsl(require('./shader/vertex.glsl').default),
-            fragmentShader: glsl(require('./shader/fragment.glsl').default),
+            fragmentShader: glsl(require('./shader/zebra-fragment.glsl').default),
+        });
+    }
+
+
+    addGround() {
+        // ground
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false }));
+        mesh.rotation.x = - Math.PI / 2;
+        mesh.receiveShadow = true;
+        this.three.scene.add(mesh);
+
+        const grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
+        grid.material.opacity = 0.2;
+        grid.material.transparent = true;
+        this.three.scene.add(grid);
+    }
+
+
+
+    loadFBX() {
+        let that = this;
+
+
+        // model
+        const loader = new FBXLoader();
+        loader.load('models/Button_Pushing.fbx', function (object) {
+
+            that.mixer = new THREE.AnimationMixer(object);
+
+            const action = that.mixer.clipAction(object.animations[0]);
+            action.setLoop(THREE.LoopOnce);
+            action.clampWhenFinished = true;
+            action.play();
+
+            that.mixer.addEventListener('finished', () => {
+                console.log('Finished')
+                console.log(action)
+                action.play();
+            });
+
+            object.traverse(function (child) {
+
+                if (child.isMesh) {
+
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    // child.material = that.shaderMaterial;
+
+                }
+
+                let scale = 0.05;
+                object.scale.set(scale, scale, scale);
+
+            });
+
+            that.three.scene.add(object);
+        });
+
+    }
+
+
+
+
+
+    loadThinkerModel() {
+        // ShaderMaterial
+        const uniforms = {
+            time: { type: "f", value: 0 },
+            mouse: { type: "vec2", value: new THREE.Vector2(100, 100) },
+            speed: { type: "f", value: 0.1 },
+            scale: { type: "f", value: 15.1 },
+            redChannel: { type: "vec3", value: new THREE.Vector3(.5, .5, 1.) },
+            greenChannel: { type: "vec3", value: new THREE.Vector3(.5, .5, 1.) },
+            blueChannel: { type: "vec3", value: new THREE.Vector3(.3, .5, 1.) },
+            fluidType: { type: "i", value: 1 },
+            horizontalMovement: { type: "vec2", value: new THREE.Vector2(0.3, 3.) },
+            verticalMovement: { type: "vec2", value: new THREE.Vector2(0.3, 3.) },
+        };
+        this.shaderMaterial = new THREE.ShaderMaterial({
+            uniforms: uniforms,
+            vertexShader: glsl(require('./shader/vertex.glsl').default),
+            fragmentShader: glsl(require('./shader/zebra-fragment.glsl').default),
         });
 
         // Load the head
         const loader = new OBJLoader();
         let that = this;
-        this.head = null;
+        this.thinker = null;
         loader.load(
-            'models/Head.obj',
+            'models/TheThinker-Decimated.obj',
             function (object) {
-
                 // Center object
                 object.traverse(function (child) {
                     if (child instanceof THREE.Mesh) {
-                        if (child.name == 'eye_low_L_eyeball_mesh.003' || child.name == 'eye_low_L.001_eyeball_mesh.004') {
-                            let scaleTo = 0;
-                            child.scale.set(scaleTo, scaleTo, scaleTo);
-                        }
                         child.material = that.shaderMaterial;
                         child.geometry.center();
                     }
                 });
-                object.material = that.shaderMaterial;
-                object.rotation.y = radians(95);
+                // object.material = that.shaderMaterial;
+                object.rotation.y = radians(-55);
 
                 // Scale
-                let scaleTo = 40;
+                let scaleTo = .4;
                 object.scale.set(scaleTo, scaleTo, scaleTo);
 
                 // Add to scene
-                that.head = object;
+                that.thinker = object;
                 that.three.scene.add(object);
             },
             function (xhr) {
@@ -107,14 +175,56 @@ export default class Sketch {
             }
         );
 
+
+
+
+
     }
 
 
 
+    animateFBX() {
+        const delta = this.clock.getDelta();
+        if (this.mixer) {
+            // console.log(this.mixer._actions[0])
+            this.mixer.update(delta);
+        }
+    }
+
+
+
+
     animateShader() {
-        if (this.head != undefined) {
+        if (this.shaderMaterial != undefined) {
             this.shaderMaterial.uniforms['time'].value = 0.01 * (Date.now() - this.three.start);
         }
+    }
+
+
+    rotateScene() {
+        this.three.scene.rotation.y -= 0.001;
+    }
+
+
+
+
+
+
+
+
+    initLights() {
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
+        hemiLight.position.set(0, 200, 0);
+        this.three.scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff);
+        dirLight.position.set(0, 200, 100);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 180;
+        dirLight.shadow.camera.bottom = - 100;
+        dirLight.shadow.camera.left = - 120;
+        dirLight.shadow.camera.right = 120;
+        this.three.scene.add(dirLight);
     }
 
 
