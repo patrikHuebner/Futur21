@@ -1,16 +1,24 @@
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
-import { radians } from '@/utils/utils.js';
-const glsl = require('glslify');
+import { gsap, Sine } from 'gsap';
+import { generateRandomColor, radians, random } from '@/utils/utils.js';
 
 
 export default class Sketch {
 
     constructor(args) {
         this.three = args.threeManager;
+
         this.mixer = null;
         this.clock = new THREE.Clock();
+        this.animation_waitBeforeNextLoop = 3000;
+
+        this.boxSize = 20;
+        this.boxes = [];
+        this.loopIteration = 0;
+
+        this.animateCamera = false;
+
         this.init();
     }
 
@@ -19,17 +27,15 @@ export default class Sketch {
 
     init() {
         this.initLights();
-        this.createShaderMaterial();
-        // this.loadThinkerModel();
         this.addGround();
         this.loadFBX();
+        this.addBoxes();
     }
 
 
     animate() {
         this.animateFBX();
-        this.animateShader();
-        // this.rotateScene();
+        this.rotateScene();
     }
 
 
@@ -40,153 +46,137 @@ export default class Sketch {
     // METHODS ---------------------------------------------------------------------------------------------
 
 
-    createShaderMaterial() {
-        // ShaderMaterial
-        const uniforms = {
-            time: { type: "f", value: 0 },
-            mouse: { type: "vec2", value: new THREE.Vector2(100, 100) },
-            speed: { type: "f", value: 0.1 },
-            scale: { type: "f", value: 15.1 },
-            redChannel: { type: "vec3", value: new THREE.Vector3(.5, .5, 1.) },
-            greenChannel: { type: "vec3", value: new THREE.Vector3(.5, .5, 1.) },
-            blueChannel: { type: "vec3", value: new THREE.Vector3(.3, .5, 1.) },
-            fluidType: { type: "i", value: 1 },
-            horizontalMovement: { type: "vec2", value: new THREE.Vector2(0.3, 3.) },
-            verticalMovement: { type: "vec2", value: new THREE.Vector2(0.3, 3.) },
-        };
-        this.shaderMaterial = new THREE.ShaderMaterial({
-            uniforms: uniforms,
-            vertexShader: glsl(require('./shader/vertex.glsl').default),
-            fragmentShader: glsl(require('./shader/zebra-fragment.glsl').default),
-        });
-    }
 
-
-    addGround() {
-        // ground
-        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false }));
-        mesh.rotation.x = - Math.PI / 2;
-        mesh.receiveShadow = true;
-        this.three.scene.add(mesh);
-
-        const grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
-        grid.material.opacity = 0.2;
-        grid.material.transparent = true;
-        this.three.scene.add(grid);
-    }
-
-
-
-    loadFBX() {
-        let that = this;
-
-
-        // model
-        const loader = new FBXLoader();
-        loader.load('models/Button_Pushing.fbx', function (object) {
-
-            that.mixer = new THREE.AnimationMixer(object);
-
-            const action = that.mixer.clipAction(object.animations[0]);
-            action.setLoop(THREE.LoopOnce);
-            action.clampWhenFinished = true;
-            action.play();
-
-            that.mixer.addEventListener('finished', () => {
-                console.log('Finished')
-                console.log(action)
-                action.play();
-            });
-
-            object.traverse(function (child) {
-
-                if (child.isMesh) {
-
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                    // child.material = that.shaderMaterial;
-
-                }
-
-                let scale = 0.05;
-                object.scale.set(scale, scale, scale);
-
-            });
-
-            that.three.scene.add(object);
+    // BOXES: INIT ---------------------------------------------------------------------------------------------
+    addBoxes() {
+        const boxGeometry = new THREE.BoxGeometry(this.boxSize, this.boxSize, this.boxSize).toNonIndexed();
+        this.boxMaterial = new THREE.MeshPhysicalMaterial({
+            clearcoat: 0.5,
+            metalness: 0,
+            color: 0xffffff,
+            normalScale: new THREE.Vector2(0.15, 0.15),
+            clearcoatNormalScale: new THREE.Vector2(2.0, - 2.0)
         });
 
-    }
+        for (let i = 0; i < 200; i++) {
+            // Generate box and random position
+            const box = new THREE.Mesh(boxGeometry, this.boxMaterial);
+            // box.castShadow = true;
+            box.receiveShadow = true;
+            box.position.x = Math.floor(Math.random() * 20 - 10) * 20;
+            box.position.y = Math.floor(Math.random() * 20) * 10 + 10;
+            box.position.z = Math.floor(Math.random() * 20 - 10) * 20;
 
-
-
-
-
-    loadThinkerModel() {
-        // ShaderMaterial
-        const uniforms = {
-            time: { type: "f", value: 0 },
-            mouse: { type: "vec2", value: new THREE.Vector2(100, 100) },
-            speed: { type: "f", value: 0.1 },
-            scale: { type: "f", value: 15.1 },
-            redChannel: { type: "vec3", value: new THREE.Vector3(.5, .5, 1.) },
-            greenChannel: { type: "vec3", value: new THREE.Vector3(.5, .5, 1.) },
-            blueChannel: { type: "vec3", value: new THREE.Vector3(.3, .5, 1.) },
-            fluidType: { type: "i", value: 1 },
-            horizontalMovement: { type: "vec2", value: new THREE.Vector2(0.3, 3.) },
-            verticalMovement: { type: "vec2", value: new THREE.Vector2(0.3, 3.) },
-        };
-        this.shaderMaterial = new THREE.ShaderMaterial({
-            uniforms: uniforms,
-            vertexShader: glsl(require('./shader/vertex.glsl').default),
-            fragmentShader: glsl(require('./shader/zebra-fragment.glsl').default),
-        });
-
-        // Load the head
-        const loader = new OBJLoader();
-        let that = this;
-        this.thinker = null;
-        loader.load(
-            'models/TheThinker-Decimated.obj',
-            function (object) {
-                // Center object
-                object.traverse(function (child) {
-                    if (child instanceof THREE.Mesh) {
-                        child.material = that.shaderMaterial;
-                        child.geometry.center();
-                    }
-                });
-                // object.material = that.shaderMaterial;
-                object.rotation.y = radians(-55);
-
-                // Scale
-                let scaleTo = .4;
-                object.scale.set(scaleTo, scaleTo, scaleTo);
-
-                // Add to scene
-                that.thinker = object;
-                that.three.scene.add(object);
-            },
-            function (xhr) {
-                // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-            },
-            function (error) {
-                console.error('An error happened while loading/parsing the OBJ file');
+            // Make sure the box is not in the exact center and obscures our guy
+            if (box.position.x > -20 && box.position.x < -20) {
+                box.position.x = 30;
             }
-        );
 
-
-
-
-
+            // Add box to array and scene
+            this.three.scene.add(box);
+            this.boxes.push(box);
+        }
     }
 
 
 
+    // BOXES: UPDATE ---------------------------------------------------------------------------------------------
+    updateBoxPositions() {
+        for (let index in this.boxes) {
+            let child = this.boxes[index];
+
+            let newPos = new THREE.Vector3(
+                Math.floor(Math.random() * 20 - 10) * 20,
+                Math.floor(Math.random() * 20) * 20 + 10,
+                Math.floor(Math.random() * 20 - 10) * 20
+            );
+
+            // Make sure the box is not in the exact center and obscures our guy
+            if (newPos.x > -20 && newPos.x < 20) {
+                newPos.x = 30;
+            }
+
+            gsap.to(child.scale, {
+                y: random(1, 3),
+                duration: Math.random() * 4 + 1,
+                ease: Sine.easeInOut,
+            });
+
+            gsap.to(child.position, {
+                x: newPos.x,
+                y: newPos.y,
+                z: newPos.z,
+                duration: Math.random() * 4 + 1,
+                ease: Sine.easeInOut,
+            });
+
+            gsap.to(child.rotation, {
+                z: radians(this.loopIteration * 180),
+                // y: newPos.y,
+                // z: newPos.z,
+                duration: Math.random() * 4 + 1,
+                ease: Sine.easeInOut,
+            });
+
+
+        }
+    }
+
+
+
+
+    // LOOP ---------------------------------------------------------------------------------------------
+    objectTimer() {
+        setTimeout(() => {
+            this.loopIteration++;
+
+            // Update box positions
+            this.updateBoxPositions();
+
+            //
+            let hexColor = generateRandomColor();
+            this.colorMaterial.color = new THREE.Color(hexColor);
+
+            // // Random color
+            // let hexColor = this.generateRandomColor();
+            // this.three.renderer.setClearColor(new THREE.Color(hexColor));
+            // this.floor.material.color = new THREE.Color(hexColor);
+            // this.dirLight.color = new THREE.Color(hexColor);
+
+            // Camera
+            if (this.animateCamera) {
+                gsap.to(this.three.camera.rotation, {
+                    z: radians(random(-10, 10)),
+                    duration: Math.random() * 4 + 1,
+                    ease: Sine.easeInOut,
+                });
+                gsap.to(this.three.camera.position, {
+                    z: random(5, 50),
+                    duration: random(3, 7),
+                    ease: Sine.easeInOut,
+                });
+            }
+
+        }, 2850);
+    }
+
+
+
+
+    // SCENE: ROTATE ---------------------------------------------------------------------------------------------
+    rotateScene() {
+        if (this.animateCamera) {
+            this.three.scene.rotation.y -= 0.001;
+        }
+    }
+
+
+
+
+    // CHARACTER: ANIMATE ---------------------------------------------------------------------------------------------
     animateFBX() {
         const delta = this.clock.getDelta();
         if (this.mixer) {
-            // console.log(this.mixer._actions[0])
             this.mixer.update(delta);
         }
     }
@@ -194,38 +184,110 @@ export default class Sketch {
 
 
 
-    animateShader() {
-        if (this.shaderMaterial != undefined) {
-            this.shaderMaterial.uniforms['time'].value = 0.01 * (Date.now() - this.three.start);
-        }
+
+    // CHARACTER: LOAD ---------------------------------------------------------------------------------------------
+    loadFBX() {
+        let that = this;
+
+        this.colorMaterial = new THREE.MeshPhysicalMaterial({
+            clearcoat: 1.0,
+            metalness: 0.5,
+        });
+
+
+        // model
+        const loader = new FBXLoader();
+        loader.load('models/Button_Pushing.fbx', function (object) {
+
+            // Create mixer and action
+            that.mixer = new THREE.AnimationMixer(object);
+            const action = that.mixer.clipAction(object.animations[0]);
+
+            // Handle manually repeating the action
+            action.setLoop(THREE.LoopOnce);
+            action.clampWhenFinished = true;
+            that.mixer.addEventListener('finished', () => {
+                setTimeout(() => {
+                    that.mixer.time = 0;
+                    action.reset();
+                    action.play();
+                    that.objectTimer();
+                }, that.animation_waitBeforeNextLoop);
+            });
+
+            // Trigger initial animation
+            action.play();
+
+            // 
+            that.objectTimer();
+
+            // Traverse to set shadows, scale and apply material
+            object.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+
+                    child.material = that.colorMaterial;
+
+                    // child.material = that.shaderMaterial;
+                }
+
+                let scale = 0.05;
+                object.scale.set(scale, scale, scale);
+            });
+
+            // Add to scene
+            that.three.scene.add(object);
+        });
+
     }
 
 
-    rotateScene() {
-        this.three.scene.rotation.y -= 0.001;
+
+    // GROUND PLANE ---------------------------------------------------------------------------------------------
+    addGround() {
+        const floorMaterial = new THREE.MeshPhongMaterial({
+            color: 0x999999,
+            depthWrite: true
+        });
+
+        this.floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(2000, 2000),
+            floorMaterial
+        );
+
+        this.floor.rotation.x = - Math.PI / 2;
+        this.floor.receiveShadow = true;
+        this.three.scene.add(this.floor);
+
+        const grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
+        grid.material.opacity = 1;
+        grid.material.transparent = true;
+        this.three.scene.add(grid);
     }
 
 
 
 
-
-
-
-
+    // LIGHTS ---------------------------------------------------------------------------------------------
     initLights() {
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
         hemiLight.position.set(0, 200, 0);
         this.three.scene.add(hemiLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff);
-        dirLight.position.set(0, 200, 100);
-        dirLight.castShadow = true;
-        dirLight.shadow.camera.top = 180;
-        dirLight.shadow.camera.bottom = - 100;
-        dirLight.shadow.camera.left = - 120;
-        dirLight.shadow.camera.right = 120;
-        this.three.scene.add(dirLight);
+        this.dirLight = new THREE.DirectionalLight(0xffffff);
+        this.dirLight.position.set(0, 200, 100);
+        this.dirLight.castShadow = true;
+        this.dirLight.shadow.camera.top = 180;
+        this.dirLight.shadow.camera.bottom = - 100;
+        this.dirLight.shadow.camera.left = - 120;
+        this.dirLight.shadow.camera.right = 120;
+        this.dirLight.shadow.mapSize.width = 512;
+        this.dirLight.shadow.mapSize.height = 512;
+        this.three.scene.add(this.dirLight);
     }
+
+
 
 
 }

@@ -1,6 +1,19 @@
 let uid = 0;
 
 
+const generateRandomColor = () => {
+	const hexValues = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'A', 'B', 'C', 'D', 'E', 'F'];
+	let hex = '#';
+	for (let i = 0; i < 6; i++) {
+		const index = Math.floor(Math.random() * hexValues.length)
+		hex += hexValues[index];
+	}
+
+	return hex;
+}
+
+
+
 const dragDropEvent = (event_normal, event_alpha) => {
 	document.addEventListener("dragover", function (event) {
 		event.preventDefault();
@@ -153,4 +166,4 @@ const drawImageProp = (ctx, img, x, y, w, h, offsetX, offsetY) => {
 	ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h);
 }
 
-export { getUID, radians, lerp, map, random, hexToRgbA, rgbaChangeOpacity, dragDropEvent, simulateClick, drawImageProp }
+export { generateRandomColor, getUID, radians, lerp, map, random, hexToRgbA, rgbaChangeOpacity, dragDropEvent, simulateClick, drawImageProp }

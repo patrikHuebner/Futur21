@@ -12,10 +12,10 @@ export default createStore({
       cappedFramerate: 30,
     },
     camera: {
-      position: { x: 7.31820570305854, y: 5.618309558085553, z: 14.191760761832112, fov: 40 },
-      rotation: { x: -0.10773526492859463, y: 0.6012496689946079, z: 0.06110370203075244 },
-      target: { x: -2.4419250736660736, y: 4.088398892294022, z: 0.0460962514344083 },
-      keepControlsAboveGround: false,
+      position: { x: 10.81789415545599, y: 3.955361282972517, z: 16.628889228549898, fov: 40 },
+      rotation: { x: 0.008370608022496189, y: 0.6188615413328652, z: -0.004855933743931452 },
+      target: { x: -1.470763736318063, y: 4.099791968951813, z: -0.625211345344112 },
+      keepControlsAboveGround: true,
     },
     colors: {
       background: "#ffffff",

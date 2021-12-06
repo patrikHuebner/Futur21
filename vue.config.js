@@ -10,6 +10,12 @@ module.exports = {
             .use('glslify-loader')
             .loader('glslify-loader')
             .end()
+
+            .rule('file-loader')
+            .test(/\.hdr$/)
+            .use('file-loader')
+            .loader('file-loader')
+            .end()
     },
 
 }

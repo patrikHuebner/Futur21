@@ -3,7 +3,7 @@ varying vec2 vUv;
 
 void main(){
     vec2 uv = vUv;
-    float t = time*.004;
+    float t = time*.04;
     vec2 center = vec2(1000.0);
     float g = 3.1;
     center.x+=sin(uv.y*g+t+time*0.01);

@@ -2,6 +2,7 @@ import { useStore } from "vuex";
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import AnimationFrame from "@/utils/AnimationFrame.js";
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import Sketch from '@/THREE/Sketch.js';
 
 export default class THREE_Manager {
@@ -35,6 +36,9 @@ export default class THREE_Manager {
         this.init_camera();
         this.init_controls();
 
+        // Load HDRI file
+        this.loadHDRI_fromSingleFile('../HDRI/adams_place_bridge_4k.hdr');
+
         // Add resize event
         window.addEventListener('resize', this.resize.bind(this));
 
@@ -54,7 +58,13 @@ export default class THREE_Manager {
         this.renderer.setClearColor(new THREE.Color(this.store.state.colors.background));
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.domElement.id = 'threeWebGL';
-        this.renderer.toneMapping = THREE.LinearToneMapping;
+
+        // this.renderer.toneMapping = THREE.LinearToneMapping;
+        this.renderer.physicallyCorrectLights = true;
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.toneMapping = 4; // THREE.CineonToneMapping; should be 3 but seems to be 4
+        this.renderer.toneMappingExposure = 2;
+
 
         // Check and apply shadow settings
         if (this.store.state.global.shadows) {
@@ -99,6 +109,8 @@ export default class THREE_Manager {
         this.controls.enablePan = true;
         this.controls.dampingFactor = 0.1;
         this.controls.rotateSpeed = 0.7;
+        this.controls.minDistance = 10;
+        this.controls.maxDistance = 400;
 
         // Prevent controls from going beyond the ground
         if (this.store.state.camera.keepControlsAboveGround) {
@@ -107,7 +119,7 @@ export default class THREE_Manager {
             this.groundPosition = this.camera.position.clone();
             this.groundPosition.y = 0;
             this.d = (this.centerPosition.distanceTo(this.groundPosition));
-            this.origin = new THREE.Vector2(this.controls.target.y, 0);
+            this.origin = new THREE.Vector2(this.controls.target.y + 2, 0);
             this.remote = new THREE.Vector2(0, this.d); // replace 0 with raycasted ground altitude
             this.angleRadians = Math.atan2(this.remote.y - this.origin.y, this.remote.x - this.origin.x);
             this.controls.maxPolarAngle = this.angleRadians;
@@ -192,5 +204,27 @@ export default class THREE_Manager {
         if (window.stats != null) window.stats.end();
     }
 
+
+
+
+    // LOAD HDR FROM A SINGLE FILE  ---------------------------------------------------------------------------------------------
+    loadHDRI_fromSingleFile(hdrFile) {
+        let that = this;
+        this.pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+        this.pmremGenerator.compileEquirectangularShader();
+        new RGBELoader()
+            .setDataType(THREE.UnsignedByteType)
+            .setPath('../HDRI/')
+            .load(hdrFile, function (texture) {
+                var envMap = that.pmremGenerator.fromEquirectangular(texture).texture;
+
+                // that.scene.background = envMap;
+                that.scene.environment = envMap;
+
+                texture.dispose();
+                that.pmremGenerator.dispose();
+            });
+        this.pmremGenerator.compileEquirectangularShader();
+    }
 
 }
