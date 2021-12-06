@@ -1,24 +1,34 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
-import { gsap, Sine } from 'gsap';
-import { generateRandomColor, radians, random } from '@/utils/utils.js';
+import { gsap, Sine, Back } from 'gsap';
+import { hexToRgb, radians, random } from '@/utils/utils.js';
+import { useStore } from "vuex";
 
 
 export default class Sketch {
 
     constructor(args) {
-        this.three = args.threeManager;
+        // VueX
+        this.store = useStore();
 
+        // ThreeManager
+        this.three = args.threeManager;
+        this.textureLoader = new THREE.TextureLoader();
+
+        // Animation
         this.mixer = null;
         this.clock = new THREE.Clock();
         this.animation_waitBeforeNextLoop = 3000;
+        this.animateCamera = true;
 
+        // Boxes
         this.boxSize = 20;
         this.boxes = [];
+        this.smallBoxes = [];
         this.loopIteration = 0;
+        this.nextColor = null;
 
-        this.animateCamera = false;
-
+        // Init
         this.init();
     }
 
@@ -30,6 +40,7 @@ export default class Sketch {
         this.addGround();
         this.loadFBX();
         this.addBoxes();
+        this.addSmallBoxes();
     }
 
 
@@ -44,27 +55,110 @@ export default class Sketch {
 
 
     // METHODS ---------------------------------------------------------------------------------------------
+    addSmallBoxes() {
+        let boxSize = 0.2;
+        let boxGeometry = new THREE.SphereBufferGeometry(boxSize, 32).toNonIndexed();
 
+        for (let i = 0; i < 3; i++) {
+            let boxMaterial = new THREE.MeshPhongMaterial({
+                specular: 0x111111,
+                emissive: 0x000000,
+                shininess: 30,
+                reflectivity: 1,
+            });
+
+            const box = new THREE.Mesh(boxGeometry, boxMaterial);
+            box.position.x = -2 + i * 2;
+            box.position.y = 5;
+            box.position.z = 2.05;
+            box.castShadow = true;
+            box.receiveShadow = true;
+
+            this.three.scene.add(box);
+            this.smallBoxes.push(box);
+        }
+    }
+    smallBoxes_animateIn(firstRun) {
+        this.nextColor = this.store.state.colors.primary[Math.round(random(0, this.store.state.colors.primary.length))];
+        let color2 = this.store.state.colors.primary[Math.round(random(0, this.store.state.colors.primary.length))];
+        let color3 = this.store.state.colors.primary[Math.round(random(0, this.store.state.colors.primary.length))];
+        let objectColors = [color2, this.nextColor, color3];
+
+        for (let index in this.smallBoxes) {
+            let box = this.smallBoxes[index];
+            let duration = Math.random() * 3 + 1;
+            if (firstRun) {
+                duration = 0;
+            }
+            box.material.color = new THREE.Color(objectColors[index]);
+            gsap.to(box.position, {
+                y: 5,
+                duration: duration,
+                ease: Back.easeInOut,
+            });
+        }
+    }
+    smallBoxes_animateOut() {
+        for (let index in this.smallBoxes) {
+            let box = this.smallBoxes[index];
+            gsap.to(box.position, {
+                y: -2,
+                duration: Math.random() * 2 + 1,
+                ease: Sine.easeIn,
+            });
+        }
+    }
 
 
     // BOXES: INIT ---------------------------------------------------------------------------------------------
     addBoxes() {
-        const boxGeometry = new THREE.BoxGeometry(this.boxSize, this.boxSize, this.boxSize).toNonIndexed();
-        this.boxMaterial = new THREE.MeshPhysicalMaterial({
-            clearcoat: 0.5,
-            metalness: 0,
-            color: 0xffffff,
-            normalScale: new THREE.Vector2(0.15, 0.15),
-            clearcoatNormalScale: new THREE.Vector2(2.0, - 2.0)
-        });
+        let textureCount = 15;
 
-        for (let i = 0; i < 200; i++) {
+        // Crate BoxBufferGeometry
+        const boxGeometry = new THREE.BoxBufferGeometry(this.boxSize, this.boxSize, this.boxSize).toNonIndexed();
+        // prepare geometry to use 2 materials
+        boxGeometry.clearGroups();
+        boxGeometry.addGroup(0, Infinity, 0);
+        boxGeometry.addGroup(0, Infinity, 1);
+        boxGeometry.addGroup(0, Infinity, 2);
+
+        for (let i = 0; i < 30; i++) {
+            // Material
+            let texture = this.textureLoader.load('textures/' + i + '.png');
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            let boxMaterial_alpha = new THREE.MeshPhongMaterial({
+                color: 0xffffff,
+                specular: 0x111111,
+                emissive: 0x000000,
+                shininess: 30,
+                reflectivity: 1,
+                map: texture,
+                transparent: true,
+                opacity: 1,
+            });
+            let boxMaterial_base = new THREE.MeshPhongMaterial({
+                color: 0xffffff,
+                specular: 0x111111,
+                emissive: 0x000000,
+                shininess: 30,
+                reflectivity: 1,
+            });
+            let boxMaterial_wireframe = new THREE.MeshBasicMaterial({
+                wireframe: true,
+                color: 0x000000
+            })
+
+            let boxMaterial = [boxMaterial_alpha, boxMaterial_wireframe, boxMaterial_base];
+
+
+
             // Generate box and random position
-            const box = new THREE.Mesh(boxGeometry, this.boxMaterial);
+            const box = new THREE.Mesh(boxGeometry, boxMaterial);
             // box.castShadow = true;
             box.receiveShadow = true;
             box.position.x = Math.floor(Math.random() * 20 - 10) * 20;
-            box.position.y = Math.floor(Math.random() * 20) * 10 + 10;
+            box.position.y = Math.floor(Math.random() * 20) * 7 + 10;
             box.position.z = Math.floor(Math.random() * 20 - 10) * 20;
 
             // Make sure the box is not in the exact center and obscures our guy
@@ -76,6 +170,38 @@ export default class Sketch {
             this.three.scene.add(box);
             this.boxes.push(box);
         }
+
+
+
+
+        for (let i = 0; i < 30; i++) {
+            let boxMaterial = new THREE.MeshPhongMaterial({
+                color: 0xffffff,
+                specular: 0x111111,
+                emissive: 0x000000,
+                shininess: 30,
+                reflectivity: 1,
+            });
+
+            // Generate box and random position
+            const box = new THREE.Mesh(boxGeometry, boxMaterial);
+            box.castShadow = true;
+            box.receiveShadow = true;
+            box.position.x = Math.floor(Math.random() * 20 - 10) * 20;
+            box.position.y = Math.floor(Math.random() * 20) * 7 + 10;
+            box.position.z = Math.floor(Math.random() * 20 - 10) * 20;
+
+            // Make sure the box is not in the exact center and obscures our guy
+            if (box.position.x > -20 && box.position.x < -20) {
+                box.position.x = 30;
+            }
+
+            // Add box to array and scene
+            this.three.scene.add(box);
+            this.boxes.push(box);
+        }
+
+
     }
 
 
@@ -87,7 +213,7 @@ export default class Sketch {
 
             let newPos = new THREE.Vector3(
                 Math.floor(Math.random() * 20 - 10) * 20,
-                Math.floor(Math.random() * 20) * 20 + 10,
+                Math.floor(Math.random() * 20) * 7 + 10,
                 Math.floor(Math.random() * 20 - 10) * 20
             );
 
@@ -111,7 +237,7 @@ export default class Sketch {
             });
 
             gsap.to(child.rotation, {
-                z: radians(this.loopIteration * 180),
+                z: radians(this.loopIteration * 360),
                 // y: newPos.y,
                 // z: newPos.z,
                 duration: Math.random() * 4 + 1,
@@ -133,15 +259,33 @@ export default class Sketch {
             // Update box positions
             this.updateBoxPositions();
 
-            //
-            let hexColor = generateRandomColor();
-            this.colorMaterial.color = new THREE.Color(hexColor);
+            // Random color
+            let newColor = hexToRgb(this.nextColor);
 
-            // // Random color
-            // let hexColor = this.generateRandomColor();
+            gsap.to(this.colorMaterial.color, {
+                r: newColor.r * 0.01,
+                g: newColor.g * 0.01,
+                b: newColor.b * 0.01,
+                duration: Math.random() * 3 + 1,
+                // ease: Sine.easeInOut,
+            });
+
+            gsap.to(this.floor.material.color, {
+                r: newColor.r * 0.01,
+                g: newColor.g * 0.01,
+                b: newColor.b * 0.01,
+                duration: Math.random() * 3 + 1,
+                // ease: Sine.easeInOut,
+            });
+
+
+            // this.colorMaterial.color = new THREE.Color(this.nextColor);
             // this.three.renderer.setClearColor(new THREE.Color(hexColor));
-            // this.floor.material.color = new THREE.Color(hexColor);
+            // this.floor.material.color = new THREE.Color(this.nextColor);
             // this.dirLight.color = new THREE.Color(hexColor);
+
+            // Move balls away
+            this.smallBoxes_animateOut();
 
             // Camera
             if (this.animateCamera) {
@@ -212,11 +356,17 @@ export default class Sketch {
                     action.reset();
                     action.play();
                     that.objectTimer();
+
                 }, that.animation_waitBeforeNextLoop);
+
+                setTimeout(() => {
+                    that.smallBoxes_animateIn();
+                }, that.animation_waitBeforeNextLoop - 2000)
             });
 
             // Trigger initial animation
             action.play();
+            that.smallBoxes_animateIn(true);
 
             // 
             that.objectTimer();
@@ -271,6 +421,9 @@ export default class Sketch {
 
     // LIGHTS ---------------------------------------------------------------------------------------------
     initLights() {
+        const ambientLight = new THREE.AmbientLight(0x000000);
+        this.three.scene.add(ambientLight);
+
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
         hemiLight.position.set(0, 200, 0);
         this.three.scene.add(hemiLight);

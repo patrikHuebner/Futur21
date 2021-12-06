@@ -12,7 +12,7 @@ module.exports = {
             .end()
 
             .rule('file-loader')
-            .test(/\.hdr$/)
+            .test(/\.(png|jpg|hdr)$/)
             .use('file-loader')
             .loader('file-loader')
             .end()

@@ -19,6 +19,7 @@ export default createStore({
     },
     colors: {
       background: "#ffffff",
+      primary: ['#333333', '#CCCCCC', '#F1C660', '#D02023', '#E54726', '#23E383', '#108AB2', '#4A57A2', '#94299E']
     }
   },
   mutations: {

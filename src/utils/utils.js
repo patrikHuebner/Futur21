@@ -13,6 +13,15 @@ const generateRandomColor = () => {
 }
 
 
+const hexToRgb = (hex) => {
+	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	return result ? {
+		r: parseInt(result[1], 16),
+		g: parseInt(result[2], 16),
+		b: parseInt(result[3], 16)
+	} : null;
+}
+
 
 const dragDropEvent = (event_normal, event_alpha) => {
 	document.addEventListener("dragover", function (event) {
@@ -166,4 +175,4 @@ const drawImageProp = (ctx, img, x, y, w, h, offsetX, offsetY) => {
 	ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h);
 }
 
-export { generateRandomColor, getUID, radians, lerp, map, random, hexToRgbA, rgbaChangeOpacity, dragDropEvent, simulateClick, drawImageProp }
+export { hexToRgb, generateRandomColor, getUID, radians, lerp, map, random, hexToRgbA, rgbaChangeOpacity, dragDropEvent, simulateClick, drawImageProp }
