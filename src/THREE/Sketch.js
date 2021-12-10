@@ -3,6 +3,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { gsap, Sine, Back } from 'gsap';
 import { hexToRgb, radians, random } from '@/utils/utils.js';
 import { useStore } from "vuex";
+import Character from './Character.js';
 
 
 export default class Sketch {
@@ -19,7 +20,7 @@ export default class Sketch {
         this.mixer = null;
         this.clock = new THREE.Clock();
         this.animation_waitBeforeNextLoop = 3000;
-        this.animateCamera = true;
+        this.animateCamera = false;
 
         // Boxes
         this.boxSize = 20;
@@ -38,15 +39,16 @@ export default class Sketch {
     init() {
         this.initLights();
         this.addGround();
-        this.loadFBX();
-        this.addBoxes();
-        this.addSmallBoxes();
+        this.initCharacter();
+        // this.loadFBX();
+        // this.addBoxes();
+        // this.addSmallBoxes();
     }
 
 
     animate() {
-        this.animateFBX();
-        this.rotateScene();
+        // this.animateFBX();
+        // this.rotateScene();
     }
 
 
@@ -55,6 +57,11 @@ export default class Sketch {
 
 
     // METHODS ---------------------------------------------------------------------------------------------
+    initCharacter() {
+        this.character = new Character({ threeManager: this.three })
+    }
+
+
     addSmallBoxes() {
         let boxSize = 0.2;
         let boxGeometry = new THREE.SphereBufferGeometry(boxSize, 32).toNonIndexed();
@@ -174,7 +181,7 @@ export default class Sketch {
 
 
 
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 10; i++) {
             let boxMaterial = new THREE.MeshPhongMaterial({
                 color: 0xffffff,
                 specular: 0x111111,
@@ -317,80 +324,80 @@ export default class Sketch {
 
 
 
-    // CHARACTER: ANIMATE ---------------------------------------------------------------------------------------------
-    animateFBX() {
-        const delta = this.clock.getDelta();
-        if (this.mixer) {
-            this.mixer.update(delta);
-        }
-    }
+    // // CHARACTER: ANIMATE ---------------------------------------------------------------------------------------------
+    // animateFBX() {
+    //     const delta = this.clock.getDelta();
+    //     if (this.mixer) {
+    //         this.mixer.update(delta);
+    //     }
+    // }
 
 
 
 
 
-    // CHARACTER: LOAD ---------------------------------------------------------------------------------------------
-    loadFBX() {
-        let that = this;
+    // // CHARACTER: LOAD ---------------------------------------------------------------------------------------------
+    // loadFBX() {
+    //     let that = this;
 
-        this.colorMaterial = new THREE.MeshPhysicalMaterial({
-            clearcoat: 1.0,
-            metalness: 0.5,
-        });
+    //     this.colorMaterial = new THREE.MeshPhysicalMaterial({
+    //         clearcoat: 1.0,
+    //         metalness: 0.5,
+    //     });
 
 
-        // model
-        const loader = new FBXLoader();
-        loader.load('models/Button_Pushing.fbx', function (object) {
+    //     // model
+    //     const loader = new FBXLoader();
+    //     loader.load('models/Button_Pushing.fbx', function (object) {
 
-            // Create mixer and action
-            that.mixer = new THREE.AnimationMixer(object);
-            const action = that.mixer.clipAction(object.animations[0]);
+    //         // Create mixer and action
+    //         that.mixer = new THREE.AnimationMixer(object);
+    //         const action = that.mixer.clipAction(object.animations[0]);
 
-            // Handle manually repeating the action
-            action.setLoop(THREE.LoopOnce);
-            action.clampWhenFinished = true;
-            that.mixer.addEventListener('finished', () => {
-                setTimeout(() => {
-                    that.mixer.time = 0;
-                    action.reset();
-                    action.play();
-                    that.objectTimer();
+    //         // Handle manually repeating the action
+    //         action.setLoop(THREE.LoopOnce);
+    //         action.clampWhenFinished = true;
+    //         that.mixer.addEventListener('finished', () => {
+    //             setTimeout(() => {
+    //                 that.mixer.time = 0;
+    //                 action.reset();
+    //                 action.play();
+    //                 that.objectTimer();
 
-                }, that.animation_waitBeforeNextLoop);
+    //             }, that.animation_waitBeforeNextLoop);
 
-                setTimeout(() => {
-                    that.smallBoxes_animateIn();
-                }, that.animation_waitBeforeNextLoop - 2000)
-            });
+    //             setTimeout(() => {
+    //                 that.smallBoxes_animateIn();
+    //             }, that.animation_waitBeforeNextLoop - 2000)
+    //         });
 
-            // Trigger initial animation
-            action.play();
-            that.smallBoxes_animateIn(true);
+    //         // Trigger initial animation
+    //         action.play();
+    //         that.smallBoxes_animateIn(true);
 
-            // 
-            that.objectTimer();
+    //         // 
+    //         that.objectTimer();
 
-            // Traverse to set shadows, scale and apply material
-            object.traverse(function (child) {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
+    //         // Traverse to set shadows, scale and apply material
+    //         object.traverse(function (child) {
+    //             if (child.isMesh) {
+    //                 child.castShadow = true;
+    //                 child.receiveShadow = true;
 
-                    child.material = that.colorMaterial;
+    //                 child.material = that.colorMaterial;
 
-                    // child.material = that.shaderMaterial;
-                }
+    //                 // child.material = that.shaderMaterial;
+    //             }
 
-                let scale = 0.05;
-                object.scale.set(scale, scale, scale);
-            });
+    //             let scale = 0.05;
+    //             object.scale.set(scale, scale, scale);
+    //         });
 
-            // Add to scene
-            that.three.scene.add(object);
-        });
+    //         // Add to scene
+    //         that.three.scene.add(object);
+    //     });
 
-    }
+    // }
 
 
 

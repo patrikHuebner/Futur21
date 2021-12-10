@@ -36,8 +36,8 @@ export default class THREE_Manager {
         // Initialize the actual sketch
         this.sketch = new Sketch({ threeManager: this });
 
-        // Load HDRI file
-        this.loadHDRI_fromSingleFile('../HDRI/adams_place_bridge_4k.hdr');
+        // // Load HDRI file
+        // this.loadHDRI_fromSingleFile('../HDRI/adams_place_bridge_4k.hdr');
 
         // Start the animation loop
         this.startAnimationLoop();
@@ -63,7 +63,7 @@ export default class THREE_Manager {
         this.renderer.physicallyCorrectLights = true;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.toneMapping = 1; // 4
-        this.renderer.toneMappingExposure = 2;
+        this.renderer.toneMappingExposure = 1;
 
 
         // Check and apply shadow settings
@@ -88,6 +88,8 @@ export default class THREE_Manager {
     // SCENE ---------------------------------------------------------------------------------------------
     init_scene() {
         this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color( 0xa0a0a0 );
+        this.scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
     }
 
 
@@ -107,10 +109,10 @@ export default class THREE_Manager {
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.enablePan = true;
-        this.controls.dampingFactor = 0.1;
+        this.controls.dampingFactor = 0.2;
         this.controls.rotateSpeed = 0.7;
         this.controls.minDistance = 10;
-        this.controls.maxDistance = 400;
+        this.controls.maxDistance = 1000;
 
         // Prevent controls from going beyond the ground
         if (this.store.state.camera.keepControlsAboveGround) {
@@ -186,6 +188,10 @@ export default class THREE_Manager {
     update() {
         // Stats
         if (window.stats != null) window.stats.begin();
+
+        if (this.controls) {
+            this.controls.update();
+        }
 
         // Sketch
         this.sketch.animate();
