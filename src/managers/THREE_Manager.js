@@ -16,6 +16,7 @@ export default class THREE_Manager {
         this.animationFrame = null;
         this.clock = new THREE.Clock();
         this.start = Date.now();
+        this.tabActive = true;
 
         // Triger THREE initialization
         this.init();
@@ -27,6 +28,9 @@ export default class THREE_Manager {
     // INIT ---------------------------------------------------------------------------------------------
     init() {
         this.store.dispatch('console', { log: 'THREE_Manager: Initializing' });
+
+        // Check if tab is active or passive
+        this.tabVisibilityEvent();
 
         // Init THREE.js
         this.init_renderer();
@@ -215,6 +219,22 @@ export default class THREE_Manager {
         if (window.stats != null) window.stats.end();
     }
 
+
+
+
+
+    // CHECK IF TAB IS ACTIVE  ---------------------------------------------------------------------------------------------
+    tabVisibilityEvent() {
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                this.tabActive = false;
+                // console.log('Page is hidden from user view');
+            } else {
+                this.tabActive = true;
+                // console.log('Page is in user view');
+            }
+        });
+    }
 
 
 

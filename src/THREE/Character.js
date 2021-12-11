@@ -7,55 +7,7 @@ import { useStore } from "vuex";
 
 
 
-class ThirdPersonCamera {
-    constructor(params) {
-        this.params = params;
-        this.camera = params.camera;
-        this.target = params.target;
 
-        this.currentPosition = new THREE.Vector3();
-        this.currentLookat = new THREE.Vector3();
-    }
-
-
-    calculateIdealOffset() {
-        let idealOffset = new THREE.Vector3(-15, 20, -30);
-        if (this.target.stateMachine.GetState() == 'walkForward' || this.target.stateMachine.GetState() == 'walkBackward') {
-            idealOffset.z = -40;
-        }
-        else if (this.target.stateMachine.GetState() == 'runBackward') {
-            idealOffset.z = -120;
-        }
-
-        idealOffset.applyQuaternion(this.target.Rotation);
-        idealOffset.add(this.target.Position);
-        return idealOffset;
-    }
-
-    calculateIdealLookat() {
-        const idealLookat = new THREE.Vector3(0, 10, 50);
-        idealLookat.applyQuaternion(this.target.Rotation);
-        idealLookat.add(this.target.Position);
-        return idealLookat;
-    }
-
-
-    Update(delta) {
-        const idealOffset = this.calculateIdealOffset();
-        const idealLookat = this.calculateIdealLookat();
-
-        // Framerate independent coefficient for lerping
-        const turnSpeed = 0.3;
-        const t = 1.0 - Math.pow(0.001, delta * turnSpeed);
-
-        this.currentPosition.lerp(idealOffset, t);
-        this.currentLookat.lerp(idealLookat, t);
-
-        this.camera.position.copy(this.currentPosition);
-        this.camera.lookAt(this.currentLookat);
-    }
-
-}
 
 
 
@@ -71,9 +23,10 @@ export default class Character {
         this.three = args.threeManager;
         this.animations = {};
         this.decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0);
-        this.acceleration = new THREE.Vector3(1, 0.25, 50.0);
+        this.acceleration = new THREE.Vector3(1, 0.25, 150.0);
         this.velocity = new THREE.Vector3(0, 0, 0);
         this.position = new THREE.Vector3();
+        this.cameraOffset = new THREE.Vector3(-15, 20, -30);
 
         // Init
         this.init();
@@ -138,7 +91,7 @@ export default class Character {
 
         const acc = this.acceleration.clone();
         if (this.input.keys.shift) {
-            acc.multiplyScalar(10.0);
+            acc.multiplyScalar(2.0);
         }
 
         if (this.stateMachine.currentState.Name == 'pushButton') {
@@ -806,4 +759,77 @@ class BasicCharacterControllerInput {
                 break;
         }
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// THIRD PERSON CAMERA ---------------------------------------------------------------------------------------------
+class ThirdPersonCamera {
+    constructor(params) {
+        this.params = params;
+        this.camera = params.camera;
+        this.target = params.target;
+
+        this.currentPosition = new THREE.Vector3();
+        this.currentLookat = new THREE.Vector3();
+    }
+
+
+    calculateIdealOffset() {
+        //let idealOffset = new THREE.Vector3(-15, 20, -30);
+        let idealOffset = new THREE.Vector3(this.target.cameraOffset.x, this.target.cameraOffset.y, this.target.cameraOffset.z);
+        if (this.target.stateMachine.GetState() == 'walkForward' || this.target.stateMachine.GetState() == 'walkBackward') {
+            // Move the camera away a bit when walking
+            idealOffset.z = -40;
+        }
+        else if (this.target.stateMachine.GetState() == 'runBackward') {
+            // Push the camera to a position where we can see the character when running backwards
+            idealOffset.z = -120;
+        }
+
+        idealOffset.applyQuaternion(this.target.Rotation);
+        idealOffset.add(this.target.Position);
+        return idealOffset;
+    }
+
+    calculateIdealLookat() {
+        const idealLookat = new THREE.Vector3(0, 10, 50);
+        idealLookat.applyQuaternion(this.target.Rotation);
+        idealLookat.add(this.target.Position);
+        return idealLookat;
+    }
+
+
+    Update(delta) {
+        const idealOffset = this.calculateIdealOffset();
+        const idealLookat = this.calculateIdealLookat();
+
+        // Framerate independent coefficient for lerping
+        const turnSpeed = 0.3;
+        const t = 1.0 - Math.pow(0.001, delta * turnSpeed);
+
+        this.currentPosition.lerp(idealOffset, t);
+        this.currentLookat.lerp(idealLookat, t);
+
+        this.camera.position.copy(this.currentPosition);
+        this.camera.lookAt(this.currentLookat);
+    }
+
 }
