@@ -101,6 +101,8 @@ export default class THREE_Manager {
         this.camera.position.set(this.store.state.camera.position.x, this.store.state.camera.position.y, this.store.state.camera.position.z);
         this.camera.rotation.set(this.store.state.camera.rotation.x, this.store.state.camera.rotation.y, this.store.state.camera.rotation.z);
         this.camera.fov = this.store.state.camera.position.fov;
+
+        this.camera.updateProjectionMatrix();
     }
 
 

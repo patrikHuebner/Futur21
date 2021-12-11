@@ -7,6 +7,57 @@ import { useStore } from "vuex";
 
 
 
+class ThirdPersonCamera {
+    constructor(params) {
+        this.params = params;
+        this.camera = params.camera;
+        this.target = params.target;
+
+        this.currentPosition = new THREE.Vector3();
+        this.currentLookat = new THREE.Vector3();
+    }
+
+
+    calculateIdealOffset() {
+        let idealOffset = new THREE.Vector3(-15, 20, -30);
+        if (this.target.stateMachine.GetState() == 'walkForward' || this.target.stateMachine.GetState() == 'walkBackward') {
+            idealOffset.z = -40;
+        }
+        else if (this.target.stateMachine.GetState() == 'runBackward') {
+            idealOffset.z = -120;
+        }
+
+        idealOffset.applyQuaternion(this.target.Rotation);
+        idealOffset.add(this.target.Position);
+        return idealOffset;
+    }
+
+    calculateIdealLookat() {
+        const idealLookat = new THREE.Vector3(0, 10, 50);
+        idealLookat.applyQuaternion(this.target.Rotation);
+        idealLookat.add(this.target.Position);
+        return idealLookat;
+    }
+
+
+    Update(delta) {
+        const idealOffset = this.calculateIdealOffset();
+        const idealLookat = this.calculateIdealLookat();
+
+        // Framerate independent coefficient for lerping
+        const turnSpeed = 0.3;
+        const t = 1.0 - Math.pow(0.001, delta * turnSpeed);
+
+        this.currentPosition.lerp(idealOffset, t);
+        this.currentLookat.lerp(idealLookat, t);
+
+        this.camera.position.copy(this.currentPosition);
+        this.camera.lookAt(this.currentLookat);
+    }
+
+}
+
+
 
 
 // CHARACTER ---------------------------------------------------------------------------------------------
@@ -22,6 +73,7 @@ export default class Character {
         this.decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0);
         this.acceleration = new THREE.Vector3(1, 0.25, 50.0);
         this.velocity = new THREE.Vector3(0, 0, 0);
+        this.position = new THREE.Vector3();
 
         // Init
         this.init();
@@ -40,6 +92,18 @@ export default class Character {
         this.loadModels();
     }
 
+
+
+    get Position() {
+        return this.position;
+    }
+
+    get Rotation() {
+        if (!this.target) {
+            return new THREE.Quaternion();
+        }
+        return this.target.quaternion;
+    }
 
 
     update() {
@@ -74,7 +138,7 @@ export default class Character {
 
         const acc = this.acceleration.clone();
         if (this.input.keys.shift) {
-            acc.multiplyScalar(4.0);
+            acc.multiplyScalar(10.0);
         }
 
         if (this.stateMachine.currentState.Name == 'pushButton') {
@@ -87,12 +151,25 @@ export default class Character {
         if (this.input.keys.backward) {
             velocity.z -= acc.z * delta;
         }
-        if (this.input.keys.left) {
+        if (!this.input.keys.forward && !this.input.keys.backward && this.input.keys.left) {
+            // Turn left while standing
+            A.set(0, 1, 0);
+            Q.setFromAxisAngle(A, 2.0 * Math.PI * delta * this.acceleration.y);
+            R.multiply(Q);
+        }
+        else if (this.input.keys.left) {
+            // Turn left while walking or running
             A.set(0, 1, 0);
             Q.setFromAxisAngle(A, 4.0 * Math.PI * delta * this.acceleration.y);
             R.multiply(Q);
         }
-        if (this.input.keys.right) {
+        if (!this.input.keys.forward && !this.input.keys.backward && this.input.keys.right) {
+            // Turn right while standing
+            A.set(0, 1, 0);
+            Q.setFromAxisAngle(A, 2.0 * -Math.PI * delta * this.acceleration.y);
+            R.multiply(Q);
+        } else if (this.input.keys.right) {
+            // Turn right while walking or running
             A.set(0, 1, 0);
             Q.setFromAxisAngle(A, 4.0 * -Math.PI * delta * this.acceleration.y);
             R.multiply(Q);
@@ -118,7 +195,16 @@ export default class Character {
         controlObject.position.add(forward);
         controlObject.position.add(sideways);
 
+        this.position.copy(controlObject.position);
+
         oldPosition.copy(controlObject.position);
+
+
+
+        // Update the actual animation via the mixer
+        if (this.mixer) {
+            this.mixer.update(delta)
+        }
 
         // // Make camera follow our character around
         // if (
@@ -133,9 +219,9 @@ export default class Character {
         //     this.three.camera.position.set(controlObject.position.x + this.store.state.camera.position.x, controlObject.position.y + this.store.state.camera.position.y, controlObject.position.z + this.store.state.camera.position.z)
         // }
 
-        // Update the actual animation via the mixer
-        if (this.mixer) {
-            this.mixer.update(delta)
+        // Update camera
+        if (this.thirdPersonCamera) {
+            this.thirdPersonCamera.Update(delta);
         }
     }
 
@@ -177,7 +263,16 @@ export default class Character {
             loader.load('Walking_Backward.fbx', (a) => { OnLoad('walkBackward', a); });
             loader.load('Running_Forward.fbx', (a) => { OnLoad('runForward', a); });
             loader.load('Running_Backward.fbx', (a) => { OnLoad('runBackward', a); });
+            loader.load('Turn_Right.fbx', (a) => { OnLoad('turnRight', a); });
+            loader.load('Turn_Left.fbx', (a) => { OnLoad('turnLeft', a); });
             loader.load('Button_Pushing.fbx', (a) => { OnLoad('pushButton', a); });
+
+            // Set up Third person camera
+            this.thirdPersonCamera = new ThirdPersonCamera({
+                camera: this.three.camera,
+                target: this,
+            });
+
         });
     }
 
@@ -208,6 +303,10 @@ class FiniteStateMachine {
 
     AddState(name, type) {
         this.states[name] = type;
+    }
+
+    GetState() {
+        return this.currentState.Name;
     }
 
     SetState(name) {
@@ -245,8 +344,12 @@ class CharacterFSM extends FiniteStateMachine {
 
     init() {
         this.AddState('idle', IdleState);
-        this.AddState('walkForward', WalkState);
-        this.AddState('runForward', RunState);
+        this.AddState('walkForward', WalkForwardState);
+        this.AddState('walkBackward', WalkBackwardState);
+        this.AddState('runForward', RunForwardState);
+        this.AddState('runBackward', RunBackwardState);
+        this.AddState('turnRight', TurnRightState);
+        this.AddState('turnLeft', TurnLeftState);
         this.AddState('pushButton', PushButtonState);
     }
 }
@@ -296,15 +399,21 @@ class IdleState extends State {
     }
 
     Update(_, input) {
-        if (input.keys.forward || input.keys.backward) {
+        if (!input.keys.forward && !input.keys.backward && input.keys.right) {
+            this.parent.SetState('turnRight');
+        } if (!input.keys.forward && !input.keys.backward && input.keys.left) {
+            this.parent.SetState('turnLeft');
+        } else if (input.keys.forward) {
             this.parent.SetState('walkForward');
+        } else if (input.keys.backward) {
+            this.parent.SetState('walkBackward');
         } else if (input.keys.space) {
             this.parent.SetState('pushButton');
         }
     }
 }
 
-class WalkState extends State {
+class WalkForwardState extends State {
     constructor(parent) {
         super(parent);
     }
@@ -351,7 +460,54 @@ class WalkState extends State {
     }
 }
 
-class RunState extends State {
+class WalkBackwardState extends State {
+    constructor(parent) {
+        super(parent);
+    }
+
+    get Name() {
+        return 'walkBackward';
+    }
+
+    Enter(prevState) {
+        const curAction = this.parent.proxy.animations['walkBackward'].action;
+        if (prevState) {
+            const prevAction = this.parent.proxy.animations[prevState.Name].action;
+
+            curAction.enabled = true;
+
+            if (prevState.Name == 'runBackward') {
+                const ratio = curAction.getClip().duration / prevAction.getClip().duration;
+                curAction.time = prevAction.time * ratio;
+            } else {
+                curAction.time = 0.0;
+                curAction.setEffectiveTimeScale(1.0);
+                curAction.setEffectiveWeight(1.0);
+            }
+
+            curAction.crossFadeFrom(prevAction, 0.5, true);
+            curAction.play();
+        } else {
+            curAction.play();
+        }
+    }
+
+    Exit() {
+    }
+
+    Update(timeElapsed, input) {
+        if (input.keys.forward || input.keys.backward) {
+            if (input.keys.shift) {
+                this.parent.SetState('runBackward');
+            }
+            return;
+        }
+
+        this.parent.SetState('idle');
+    }
+}
+
+class RunForwardState extends State {
     constructor(parent) {
         super(parent);
     }
@@ -387,10 +543,131 @@ class RunState extends State {
     }
 
     Update(timeElapsed, input) {
-        if (input.keys.forward || input.keys.backward) {
+        if (input.keys.forward) {
             if (!input.keys.shift) {
                 this.parent.SetState('walkForward');
             }
+            return;
+        }
+
+        this.parent.SetState('idle');
+    }
+}
+
+class RunBackwardState extends State {
+    constructor(parent) {
+        super(parent);
+    }
+
+    get Name() {
+        return 'runBackward';
+    }
+
+    Enter(prevState) {
+        const curAction = this.parent.proxy.animations['runBackward'].action;
+        if (prevState) {
+            const prevAction = this.parent.proxy.animations[prevState.Name].action;
+
+            curAction.enabled = true;
+
+            if (prevState.Name == 'walkBackward') {
+                const ratio = curAction.getClip().duration / prevAction.getClip().duration;
+                curAction.time = prevAction.time * ratio;
+            } else {
+                curAction.time = 0.0;
+                curAction.setEffectiveTimeScale(1.0);
+                curAction.setEffectiveWeight(1.0);
+            }
+
+            curAction.crossFadeFrom(prevAction, 0.5, true);
+            curAction.play();
+        } else {
+            curAction.play();
+        }
+    }
+
+    Exit() {
+    }
+
+    Update(timeElapsed, input) {
+        if (input.keys.backward) {
+            if (!input.keys.shift) {
+                this.parent.SetState('walkBackward');
+            }
+            return;
+        }
+
+        this.parent.SetState('idle');
+    }
+}
+
+class TurnRightState extends State {
+    constructor(parent) {
+        super(parent);
+    }
+
+    get Name() {
+        return 'turnRight';
+    }
+
+    Enter(prevState) {
+        const curAction = this.parent.proxy.animations['turnRight'].action;
+        if (prevState) {
+            const prevAction = this.parent.proxy.animations[prevState.Name].action;
+
+            curAction.enabled = true;
+            curAction.time = 0.0;
+            curAction.setEffectiveTimeScale(1.0);
+            curAction.setEffectiveWeight(1.0);
+            curAction.crossFadeFrom(prevAction, 0.5, true);
+            curAction.play();
+        } else {
+            curAction.play();
+        }
+    }
+
+    Exit() {
+    }
+
+    Update(timeElapsed, input) {
+        if (!input.keys.forward && !input.keys.backward && input.keys.right) {
+            return;
+        }
+
+        this.parent.SetState('idle');
+    }
+}
+
+class TurnLeftState extends State {
+    constructor(parent) {
+        super(parent);
+    }
+
+    get Name() {
+        return 'turnLeft';
+    }
+
+    Enter(prevState) {
+        const curAction = this.parent.proxy.animations['turnLeft'].action;
+        if (prevState) {
+            const prevAction = this.parent.proxy.animations[prevState.Name].action;
+
+            curAction.enabled = true;
+            curAction.time = 0.0;
+            curAction.setEffectiveTimeScale(1.0);
+            curAction.setEffectiveWeight(1.0);
+            curAction.crossFadeFrom(prevAction, 0.5, true);
+            curAction.play();
+        } else {
+            curAction.play();
+        }
+    }
+
+    Exit() {
+    }
+
+    Update(timeElapsed, input) {
+        if (!input.keys.forward && !input.keys.backward && input.keys.left) {
             return;
         }
 
