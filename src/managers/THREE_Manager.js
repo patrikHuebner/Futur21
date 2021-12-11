@@ -14,6 +14,7 @@ export default class THREE_Manager {
         this.parentContainer = document.getElementById(args.parentContainer);
         this.animationHandler = null;
         this.animationFrame = null;
+        this.clock = new THREE.Clock();
         this.start = Date.now();
 
         // Triger THREE initialization
@@ -88,8 +89,8 @@ export default class THREE_Manager {
     // SCENE ---------------------------------------------------------------------------------------------
     init_scene() {
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0xa0a0a0 );
-        this.scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
+        this.scene.background = new THREE.Color(0xa0a0a0);
+        this.scene.fog = new THREE.Fog(0xa0a0a0, 200, 1000);
     }
 
 
@@ -194,7 +195,9 @@ export default class THREE_Manager {
         }
 
         // Sketch
-        this.sketch.animate();
+        if (this.sketch) {
+            this.sketch.animate();
+        }
 
         // FrameCount
         this.store.dispatch("animation_increaseFrameCount");

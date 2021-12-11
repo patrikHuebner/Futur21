@@ -47,6 +47,9 @@ export default class Sketch {
 
 
     animate() {
+        if (this.character) {
+            this.character.update();
+        }
         // this.animateFBX();
         // this.rotateScene();
     }
