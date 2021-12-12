@@ -1,4 +1,8 @@
 module.exports = {
+    devServer: {
+        hot: false,
+        liveReload: true
+    },
 
     chainWebpack: config => {
         config.module

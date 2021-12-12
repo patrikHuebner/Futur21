@@ -6,6 +6,7 @@ export default createStore({
     enableStats: true,
     frameCount: 0,
     global: {
+      usePostProcessing: true,
       antialiasing: true,
       retinaResolution: true,
       shadows: true,
@@ -23,7 +24,7 @@ export default createStore({
       keepControlsAboveGround: true,
     },
     colors: {
-      background: "#ffffff",
+      background: "#a0a0a0",
       primary: ['#333333', '#CCCCCC', '#F1C660', '#D02023', '#E54726', '#23E383', '#108AB2', '#4A57A2', '#94299E']
     }
   },
