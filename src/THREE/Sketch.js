@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { gsap, Sine, Back } from 'gsap';
 import { map, radians, random } from '@/utils/utils.js';
 import { useStore } from "vuex";
@@ -19,7 +18,8 @@ export default class Sketch {
         // Animation
         this.mixer = null;
         this.clock = new THREE.Clock();
-        this.animateCamera = false;
+        this.manualCameraAnimation = false;
+        this.rotateCamera = false;
 
         // Boxes
         this.boxSize = 20;
@@ -42,13 +42,6 @@ export default class Sketch {
 
         // Rect to mouse movement
         window.addEventListener('mousemove', e => { this.reactToMouseMove(e); });
-
-
-        // setInterval(() => {
-        //     if (this.three.tabActive) {
-        //         this.objectTimer();
-        //     }
-        // }, 10000);
     }
 
 
@@ -57,7 +50,8 @@ export default class Sketch {
             this.character.update();
             // this.dirLight.position.set(this.character.Position.x, 200, this.character.Position.z + 100);
         }
-        // this.rotateScene();
+
+        this.rotateScene();
     }
 
 
@@ -74,7 +68,7 @@ export default class Sketch {
             }
 
             let sceneX = map(mouseCoord.x, 0, window.innerWidth, 15, -15);
-            let sceneY = map(mouseCoord.y, 0, window.innerHeight, 20, 4);
+            let sceneY = map(mouseCoord.y, window.innerHeight, 0, 20, 4);
 
             this.character.cameraOffset.x = sceneX;
             this.character.cameraOffset.y = sceneY;
@@ -85,7 +79,10 @@ export default class Sketch {
 
 
     initCharacter() {
-        this.character = new Character({ threeManager: this.three })
+        this.character = new Character({
+            threeManager: this.three,
+            sketch: this,
+        })
     }
 
 
@@ -188,6 +185,25 @@ export default class Sketch {
 
 
 
+
+
+
+
+
+
+
+    triggerInteractionEvent() {
+        // this.rotateCamera = true;
+        // this.manualCameraAnimation = true;
+
+        clearTimeout(this.interactionTimeout);
+        this.interactionTimeout = setTimeout(() => {
+            this.updateBoxPositions();
+        }, 3000);        
+    }
+
+
+
     // BOXES: UPDATE ---------------------------------------------------------------------------------------------
     updateBoxPositions() {
         for (let index in this.boxes) {
@@ -224,11 +240,35 @@ export default class Sketch {
 
             gsap.to(child.rotation, {
                 z: radians(this.loopIteration * 360),
-                // y: newPos.y,
-                // z: newPos.z,
                 duration: Math.random() * 4 + 1,
                 ease: Sine.easeInOut,
             });
+
+            // let dummy = { x: 0 };
+            // gsap.to(dummy, {
+            //     x: 1,
+            //     duration: 5,
+            //     onComplete: () => {
+
+            //         let idealPosition = this.character.thirdPersonCamera.calculateIdealOffset();
+            //         let idealLookAt = this.character.thirdPersonCamera.calculateIdealLookat();
+            //         gsap.to(this.three.camera.position, {
+            //             x: idealPosition.x,
+            //             y: idealPosition.y,
+            //             z: idealPosition.z,
+            //             duration: 3,
+            //             onUpdate: () => {
+            //                 this.three.camera.lookAt(idealLookAt);
+            //                 this.three.camera.updateProjectionMatrix();
+            //             },
+            //             onComplete: () => {
+            //                 this.rotateCamera = false;
+            //                 this.manualCameraAnimation = false;
+            //             }
+            //         });
+
+            //     }
+            // });
 
         }
     }
@@ -236,51 +276,29 @@ export default class Sketch {
 
 
 
-    // LOOP ---------------------------------------------------------------------------------------------
-    objectTimer() {
-        setTimeout(() => {
-            this.loopIteration++;
-
-            // Update box positions
-            this.updateBoxPositions();
-
-            // // Random color
-            // let newColor = hexToRgb(this.nextColor);
-
-            // gsap.to(this.colorMaterial.color, {
-            //     r: newColor.r * 0.01,
-            //     g: newColor.g * 0.01,
-            //     b: newColor.b * 0.01,
-            //     duration: Math.random() * 3 + 1,
-            //     // ease: Sine.easeInOut,
-            // });
-
-            // gsap.to(this.floor.material.color, {
-            //     r: newColor.r * 0.01,
-            //     g: newColor.g * 0.01,
-            //     b: newColor.b * 0.01,
-            //     duration: Math.random() * 3 + 1,
-            //     // ease: Sine.easeInOut,
-            // });
 
 
-            // this.colorMaterial.color = new THREE.Color(this.nextColor);
-            // this.three.renderer.setClearColor(new THREE.Color(hexColor));
-            // this.floor.material.color = new THREE.Color(this.nextColor);
-            // this.dirLight.color = new THREE.Color(hexColor);
-
-        }, 2850);
-    }
 
 
 
 
     // SCENE: ROTATE ---------------------------------------------------------------------------------------------
     rotateScene() {
-        if (this.animateCamera) {
-            this.three.scene.rotation.y -= 0.001;
+        if (this.rotateCamera) {
+            let period = 5;
+            let matrix = new THREE.Matrix4();
+            matrix.set(this.three.camera.position.x * this.character.cameraOffset.x, this.three.camera.position.y * this.character.cameraOffset.y, this.three.camera.position.z * this.character.cameraOffset.z, 0)
+            matrix.makeRotationY(this.clock.getDelta() * 1 * Math.PI / period);
+            // Apply matrix like this to rotate the camera.
+            this.three.camera.position.applyMatrix4(matrix);
+            // Make camera look at the box.
+            this.three.camera.lookAt(this.character.position.x + this.character.cameraLookat.x, this.character.position.y + this.character.cameraLookat.y, this.character.position.z);
         }
     }
+
+
+
+
 
 
 

@@ -21,12 +21,15 @@ export default class Character {
 
         // Args
         this.three = args.threeManager;
+        this.sketch = args.sketch;
         this.animations = {};
         this.decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0);
         this.acceleration = new THREE.Vector3(1, 0.25, 150.0);
         this.velocity = new THREE.Vector3(0, 0, 0);
         this.position = new THREE.Vector3();
         this.cameraOffset = new THREE.Vector3(-15, 20, -30);
+        this.cameraLookat = new THREE.Vector3(0, 10, 50);
+        this.interactionTimeout = null;
 
         // Init
         this.init();
@@ -40,6 +43,12 @@ export default class Character {
 
         // Init State Machine
         this.stateMachine = new CharacterFSM(this);
+
+        // Set up Third person camera
+        this.thirdPersonCamera = new ThirdPersonCamera({
+            camera: this.three.camera,
+            target: this,
+        });
 
         // Load model and animations
         this.loadModels();
@@ -152,27 +161,12 @@ export default class Character {
 
         oldPosition.copy(controlObject.position);
 
-
-
         // Update the actual animation via the mixer
         if (this.mixer) {
             this.mixer.update(delta)
         }
 
-        // // Make camera follow our character around
-        // if (
-        //     this.input.keys.forward ||
-        //     this.input.keys.backward ||
-        //     this.input.keys.left ||
-        //     this.input.keys.right ||
-        //     this.input.keys.shift ||
-        //     this.input.keys.space
-        // ) {
-        //     this.three.controls.target.set(controlObject.position.x + this.store.state.camera.target.x, controlObject.position.y + this.store.state.camera.target.y, controlObject.position.z + this.store.state.camera.target.z)
-        //     this.three.camera.position.set(controlObject.position.x + this.store.state.camera.position.x, controlObject.position.y + this.store.state.camera.position.y, controlObject.position.z + this.store.state.camera.position.z)
-        // }
-
-        // Update camera
+        // Update camera and follow character
         if (this.thirdPersonCamera) {
             this.thirdPersonCamera.Update(delta);
         }
@@ -219,13 +213,6 @@ export default class Character {
             loader.load('Turn_Right.fbx', (a) => { OnLoad('turnRight', a); });
             loader.load('Turn_Left.fbx', (a) => { OnLoad('turnLeft', a); });
             loader.load('Button_Pushing.fbx', (a) => { OnLoad('pushButton', a); });
-
-            // Set up Third person camera
-            this.thirdPersonCamera = new ThirdPersonCamera({
-                camera: this.three.camera,
-                target: this,
-            });
-
         });
     }
 
@@ -646,6 +633,10 @@ class PushButtonState extends State {
         const mixer = curAction.getMixer();
         mixer.addEventListener('finished', this.FinishedCallback);
 
+        // Trigger interaction event
+        this.parent.proxy.sketch.triggerInteractionEvent();
+
+        //
         if (prevState) {
             const prevAction = this.parent.proxy.animations[prevState.Name].action;
 
@@ -793,7 +784,6 @@ class ThirdPersonCamera {
 
 
     calculateIdealOffset() {
-        //let idealOffset = new THREE.Vector3(-15, 20, -30);
         let idealOffset = new THREE.Vector3(this.target.cameraOffset.x, this.target.cameraOffset.y, this.target.cameraOffset.z);
         if (this.target.stateMachine.GetState() == 'walkForward' || this.target.stateMachine.GetState() == 'walkBackward') {
             // Move the camera away a bit when walking
@@ -810,7 +800,7 @@ class ThirdPersonCamera {
     }
 
     calculateIdealLookat() {
-        const idealLookat = new THREE.Vector3(0, 10, 50);
+        const idealLookat = new THREE.Vector3(this.target.cameraLookat.x, this.target.cameraLookat.y, this.target.cameraLookat.z);
         idealLookat.applyQuaternion(this.target.Rotation);
         idealLookat.add(this.target.Position);
         return idealLookat;
@@ -818,18 +808,20 @@ class ThirdPersonCamera {
 
 
     Update(delta) {
-        const idealOffset = this.calculateIdealOffset();
-        const idealLookat = this.calculateIdealLookat();
+        if (!this.target.sketch.manualCameraAnimation) {
+            const idealOffset = this.calculateIdealOffset();
+            const idealLookat = this.calculateIdealLookat();
 
-        // Framerate independent coefficient for lerping
-        const turnSpeed = 0.3;
-        const t = 1.0 - Math.pow(0.001, delta * turnSpeed);
+            // Framerate independent coefficient for lerping
+            const turnSpeed = 0.3;
+            const t = 1.0 - Math.pow(0.001, delta * turnSpeed);
 
-        this.currentPosition.lerp(idealOffset, t);
-        this.currentLookat.lerp(idealLookat, t);
+            this.currentPosition.lerp(idealOffset, t);
+            this.currentLookat.lerp(idealLookat, t);
 
-        this.camera.position.copy(this.currentPosition);
-        this.camera.lookAt(this.currentLookat);
+            this.camera.position.copy(this.currentPosition);
+            this.camera.lookAt(this.currentLookat);
+        }
     }
 
 }

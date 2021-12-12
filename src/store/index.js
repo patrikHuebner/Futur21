@@ -3,6 +3,7 @@ import { createStore } from 'vuex'
 export default createStore({
   state: {
     verbose: true,
+    enableStats: true,
     frameCount: 0,
     global: {
       antialiasing: true,

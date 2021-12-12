@@ -1,4 +1,5 @@
 import { useStore } from "vuex";
+import Stats from "@/utils/Stats";
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import AnimationFrame from "@/utils/AnimationFrame.js";
@@ -37,6 +38,7 @@ export default class THREE_Manager {
         this.init_scene();
         this.init_camera();
         this.init_controls();
+        this.init_stats();
 
         // Initialize the actual sketch
         this.sketch = new Sketch({ threeManager: this });
@@ -142,6 +144,20 @@ export default class THREE_Manager {
 
 
 
+    // STATISTICS ---------------------------------------------------------------------------------------------
+    // DO: Fix double frame-rate on hot reload
+    init_stats() {
+        if (this.store.state.enableStats) {
+            this.stats = new Stats();
+            let statsContainer = document.createElement("div");
+            statsContainer.setAttribute("id", "Stats-output");
+            statsContainer.appendChild(this.stats.dom);
+            document.body.appendChild(statsContainer);
+        }
+    }
+
+
+
     // RESIZE ---------------------------------------------------------------------------------------------
     resize() {
         if (!this.renderer) return;
@@ -194,7 +210,7 @@ export default class THREE_Manager {
     // UPDATE LOGIC ---------------------------------------------------------------------------------------------
     update() {
         // Stats
-        if (window.stats != null) window.stats.begin();
+        if (this.stats != null) this.stats.begin();
 
         if (this.controls) {
             this.controls.update();
@@ -216,7 +232,7 @@ export default class THREE_Manager {
         this.renderer.render(this.scene, this.camera);
 
         // Stats
-        if (window.stats != null) window.stats.end();
+        if (this.stats != null) this.stats.end();
     }
 
 
