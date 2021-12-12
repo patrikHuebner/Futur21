@@ -59,7 +59,7 @@ export default class Boxes {
             let boxMaterial_base = new THREE.MeshPhongMaterial({
                 color: 0xffffff,
                 specular: 0x111111,
-                emissive: 0x000000,
+                emissive: 0x6e6e6e,
                 shininess: 30,
                 reflectivity: 1,
             });

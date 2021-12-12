@@ -9,9 +9,10 @@ export default createStore({
       usePostProcessing: true,
       antialiasing: true,
       retinaResolution: true,
+      pixelRatio: 1,
       shadows: true,
       capFramerate: false,
-      cappedFramerate: 30,
+      cappedFramerate: 60,
     },
     camera: {
       position: { x: 25, y: 10, z: 25, fov: 60 },
@@ -25,7 +26,12 @@ export default createStore({
     },
     colors: {
       background: "#a0a0a0",
-      primary: ['#333333', '#CCCCCC', '#F1C660', '#D02023', '#E54726', '#23E383', '#108AB2', '#4A57A2', '#94299E']
+      primary: ['#333333', '#CCCCCC', '#F1C660', '#D02023', '#E54726', '#23E383', '#108AB2', '#4A57A2', '#94299E'],
+      gradientPass: {
+        start: "#CCCCCC",
+        middle: "#3a2f8b",
+        stop: "#19142d"
+      }
     }
   },
   mutations: {

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { Camera } from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { useStore } from "vuex";
 

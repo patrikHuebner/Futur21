@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import { map } from '@/utils/utils.js';
+import { random, hexToRgb, map } from '@/utils/utils.js';
 import { useStore } from "vuex";
 import Lights from './Lights.js';
 import Character from './Character.js';
 import Boxes from './Boxes.js';
+import { gsap, Sine, Back } from 'gsap';
 
 export default class Sketch {
 
@@ -19,6 +20,7 @@ export default class Sketch {
         this.clock = new THREE.Clock();
         this.manualCameraAnimation = false;
         this.rotateCamera = false;
+        this.nextColor = null;
 
         // Init
         this.init();
@@ -77,18 +79,7 @@ export default class Sketch {
     // METHODS ---------------------------------------------------------------------------------------------
     init_scene() {
         this.three.scene.background = new THREE.Color(0xa0a0a0);
-
-        const sky = new THREE.Mesh(
-            new THREE.SphereGeometry(10000, 32, 32),
-            new THREE.MeshBasicMaterial({
-                color: 0x8080FF,
-                side: THREE.BackSide,
-            })
-        );
-        this.three.scene.add(sky);
-
-        this.three.scene.fog = new THREE.FogExp2(0xDFE9F3, 0.0005);
-
+        this.three.scene.fog = new THREE.FogExp2(0xDFE9F3, 0.003); // 0xDFE9F3
     }
 
 
@@ -114,11 +105,20 @@ export default class Sketch {
 
 
     triggerInteractionEvent() {
-        // this.rotateCamera = true;
-        // this.manualCameraAnimation = true;
-
         clearTimeout(this.interactionTimeout);
         this.interactionTimeout = setTimeout(() => {
+            // Random color
+            this.nextColor = this.store.state.colors.primary[Math.round(random(0, this.store.state.colors.primary.length))];
+            let newColor = hexToRgb(this.nextColor);
+            gsap.to(this.three.postProcessing.gradientPass.uniforms.color1.value, {
+                r: newColor.r * 0.01,
+                g: newColor.g * 0.01,
+                b: newColor.b * 0.01,
+                duration: Math.random() * 6 + 3,
+                // ease: Sine.easeInOut,
+            });
+
+            // Update boxes
             this.boxes.updateBoxPositions();
         }, 3000);
     }
@@ -165,7 +165,7 @@ export default class Sketch {
         this.floor.receiveShadow = true;
         this.three.scene.add(this.floor);
 
-        const grid = new THREE.GridHelper(20000, 200, 0x000000, 0x000000);
+        const grid = new THREE.GridHelper(20000, 200, 0xffffff, 0xffffff);
         grid.material.opacity = 1;
         grid.material.transparent = true;
 
