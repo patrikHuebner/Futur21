@@ -1,9 +1,64 @@
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     outline: none;
+    background: #000;
+    color: #fff;
 }
 
 body {
     font-family: Helvetica, Arial;
+}
+
+/* -- MOBILE ON SCREEN CONTROLS
+    --------------------------------------------- */
+
+#mobile_OSC {
+    // display: none;
+    display: block;
+    transform: scale(0.7);
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+.OSC_component {
+    position: absolute;
+    z-index: 7000;
+    display: block;
+    width: 70px;
+    height: 70px;
+    background-size: 70px 70px;
+    cursor: pointer;
+
+    user-select: none;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+}
+
+#OSC_top {
+    right: 130px;
+    bottom: 130px;
+    background: url(~interface/mobile_OSC_top.svg);
+}
+
+#OSC_right {
+    right: 30px;
+    bottom: 30px;
+    background: url(~interface/mobile_OSC_right.svg);
+}
+
+#OSC_left {
+    right: 230px;
+    bottom: 30px;
+    background: url(~interface/mobile_OSC_left.svg);
+}
+
+#OSC_bottom {
+    right: 130px;
+    bottom: 30px;
+    background: url(~interface/mobile_OSC_bottom.svg);
 }

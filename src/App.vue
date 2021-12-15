@@ -14,7 +14,7 @@
   user-select: none;
 
   a {
-    color: #000;
+    color: #fff;
 
     &.router-link-exact-active {
       font-weight: bold;

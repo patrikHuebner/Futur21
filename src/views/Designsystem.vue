@@ -1,5 +1,13 @@
 <template>
   <div id="WEBGL"></div>
+
+  <!-- MOBILE ON SCREEN CONTROLS -->
+  <div id="mobile_OSC">
+    <div class="OSC_component" id="OSC_top"></div>
+    <div class="OSC_component" id="OSC_left"></div>
+    <div class="OSC_component" id="OSC_right"></div>
+    <div class="OSC_component" id="OSC_bottom"></div>
+  </div>
 </template>
 
 <script>
@@ -46,7 +54,6 @@ export default {
         rotString += threeManager.camera.rotation.z;
         rotString += " };";
         console.log(rotString);
-
 
         let targetString = "let target: { x: ";
         targetString += threeManager.controls.target.x;

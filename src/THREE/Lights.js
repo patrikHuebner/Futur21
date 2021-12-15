@@ -90,6 +90,14 @@ export default class Lights {
 
 
     update() {
+        if (this.sketch.character) {
+            // this.dirLight.position.copy(this.three.camera.position);
+            // this.dirLight.shadow.camera.top = this.three.camera.position.z + 180;
+            // this.dirLight.shadow.camera.bottom = this.three.camera.position.z - 100;
+            // this.dirLight.shadow.camera.left = this.three.camera.position.z - 120;
+            // this.dirLight.shadow.camera.right = this.three.camera.position.z + 120;
+        }
+
         // if (this.sketch.character) {
         //     let vector = this.sketch.character.position.clone(); //Get camera position and put into variable
         //     //vector.applyMatrix4(this.sketch.character.matrixWorld); //Hold the camera location in matrix world

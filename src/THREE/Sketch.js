@@ -56,6 +56,9 @@ export default class Sketch {
 
         // Rect to mouse movement
         window.addEventListener('mousemove', e => { this.reactToMouseMove(e); });
+
+        // Add touch controls for movement
+        this.addMobileControls();
     }
 
 
@@ -107,10 +110,23 @@ export default class Sketch {
     triggerInteractionEvent() {
         clearTimeout(this.interactionTimeout);
         this.interactionTimeout = setTimeout(() => {
+
             // Random color
-            this.nextColor = this.store.state.colors.primary[Math.round(random(0, this.store.state.colors.primary.length))];
+            this.nextColor = this.store.state.colors.primary[Math.floor(random(0, this.store.state.colors.primary.length))];
             let newColor = hexToRgb(this.nextColor);
+
+            // PostProcessing Color
             gsap.to(this.three.postProcessing.gradientPass.uniforms.color1.value, {
+                r: newColor.r * 0.01,
+                g: newColor.g * 0.01,
+                b: newColor.b * 0.01,
+                duration: Math.random() * 6 + 3,
+                // ease: Sine.easeInOut,
+            });
+
+
+            // Character color
+            gsap.to(this.character.target.children[2].material.emissive, {
                 r: newColor.r * 0.01,
                 g: newColor.g * 0.01,
                 b: newColor.b * 0.01,
@@ -173,6 +189,74 @@ export default class Sketch {
     }
 
 
+
+
+
+
+    addMobileControls() {
+        let that = this;
+
+        let moveFowardButton = document.getElementById('OSC_top');
+        moveFowardButton.addEventListener('touchstart', function () {
+            that.character.input.keys.forward = true;
+        }, false);
+        moveFowardButton.addEventListener('touchend', function () {
+            that.character.input.keys.forward = false;
+        }, false);
+        moveFowardButton.addEventListener('mousedown', function () {
+            that.character.input.keys.forward = true;
+        }, false);
+        moveFowardButton.addEventListener('mouseup', function () {
+            that.character.input.keys.forward = false;
+        }, false);
+
+
+        let moveBackButton = document.getElementById('OSC_bottom');
+        moveBackButton.addEventListener('touchstart', function () {
+            that.character.input.keys.backward = true;
+        }, false);
+        moveBackButton.addEventListener('touchend', function () {
+            that.character.input.keys.backward = false;
+        }, false);
+        moveBackButton.addEventListener('mousedown', function () {
+            that.character.input.keys.backward = true;
+        }, false);
+        moveBackButton.addEventListener('mouseup', function () {
+            that.character.input.keys.backward = false;
+        }, false);
+
+
+        let moveLeftButton = document.getElementById('OSC_left');
+        moveLeftButton.addEventListener('touchstart', function () {
+            that.character.input.keys.left = true;
+        }, false);
+        moveLeftButton.addEventListener('touchend', function () {
+            that.character.input.keys.left = false;
+        }, false);
+        moveLeftButton.addEventListener('mousedown', function () {
+            that.character.input.keys.left = true;
+        }, false);
+        moveLeftButton.addEventListener('mouseup', function () {
+            that.character.input.keys.left = false;
+        }, false);
+
+
+        let moveRightButton = document.getElementById('OSC_right');
+        moveRightButton.addEventListener('touchstart', function () {
+            that.character.input.keys.right = true;
+        }, false);
+        moveRightButton.addEventListener('touchend', function () {
+            that.character.input.keys.right = false;
+        }, false);
+        moveRightButton.addEventListener('mousedown', function () {
+            that.character.input.keys.right = true;
+        }, false);
+        moveRightButton.addEventListener('mouseup', function () {
+            that.character.input.keys.right = false;
+        }, false);
+
+
+    }
 
 
 

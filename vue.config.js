@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
     devServer: {
         hot: false,
@@ -5,6 +7,7 @@ module.exports = {
     },
 
     chainWebpack: config => {
+        config.resolve.alias.set('interface', path.resolve('public/interface'));
         config.module
             .rule('glslify')
             .test(/\.(glsl|vs|fs|vert|frag)$/)
@@ -16,10 +19,11 @@ module.exports = {
             .end()
 
             .rule('file-loader')
-            .test(/\.(png|jpg|hdr)$/)
+            .test(/\.(svg|png|jpg|hdr)$/)
             .use('file-loader')
             .loader('file-loader')
             .end()
     },
+
 
 }

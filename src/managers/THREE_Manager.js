@@ -48,8 +48,8 @@ export default class THREE_Manager {
         // Initialize the actual sketch
         this.sketch = new Sketch({ threeManager: this });
 
-        // Load HDRI file
-        this.loadHDRI_fromSingleFile('../HDRI/adams_place_bridge_4k.hdr');
+        // // Load HDRI file
+        // this.loadHDRI_fromSingleFile('../HDRI/adams_place_bridge_4k.hdr');
 
         // Start the animation loop
         this.startAnimationLoop();
@@ -220,6 +220,8 @@ export default class THREE_Manager {
         // Stats
         if (this.stats != null) this.stats.begin();
 
+
+        // Controls
         if (this.controls) {
             this.controls.update();
         }
@@ -227,6 +229,11 @@ export default class THREE_Manager {
         // Sketch
         if (this.sketch) {
             this.sketch.update();
+        }
+
+        // Composer
+        if (this.postProcessing) {
+            this.postProcessing.update();
         }
 
         // FrameCount

@@ -182,6 +182,7 @@ export default class Character {
             });
 
             this.target = fbx;
+            this.target.children[2].material.emissive = new THREE.Color(0xCCCCCC);
             this.three.scene.add(this.target);
 
             this.mixer = new THREE.AnimationMixer(this.target);
@@ -706,15 +707,19 @@ class BasicCharacterControllerInput {
 
     onKeyDown(event) {
         switch (event.keyCode) {
+            case 38: // up
             case 87: // w
                 this.keys.forward = true;
                 break;
+            case 37: // left
             case 65: // a
                 this.keys.left = true;
                 break;
+            case 40: // down
             case 83: // s
                 this.keys.backward = true;
                 break;
+            case 39: // right
             case 68: // d
                 this.keys.right = true;
                 break;
@@ -729,15 +734,19 @@ class BasicCharacterControllerInput {
 
     onKeyUp(event) {
         switch (event.keyCode) {
+            case 38: // up
             case 87: // w
                 this.keys.forward = false;
                 break;
+            case 37: // left
             case 65: // a
                 this.keys.left = false;
                 break;
+            case 40: // down
             case 83: // s
                 this.keys.backward = false;
                 break;
+            case 39: // right
             case 68: // d
                 this.keys.right = false;
                 break;
