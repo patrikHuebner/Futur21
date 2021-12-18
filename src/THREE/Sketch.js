@@ -92,7 +92,10 @@ export default class Sketch {
 
     // METHODS ---------------------------------------------------------------------------------------------
     init_scene() {
+        // Background
         this.three.scene.background = new THREE.Color(0xa0a0a0);
+
+        // Fog
         this.three.scene.fog = new THREE.FogExp2(0xDFE9F3, 0.003); // 0xDFE9F3
     }
 
@@ -127,13 +130,15 @@ export default class Sketch {
             let newColor = hexToRgb(this.nextColor);
 
             // PostProcessing Color
-            gsap.to(this.three.postProcessing.gradientPass.uniforms.color1.value, {
-                r: newColor.r * 0.01,
-                g: newColor.g * 0.01,
-                b: newColor.b * 0.01,
-                duration: Math.random() * 6 + 3,
-                // ease: Sine.easeInOut,
-            });
+            if (this.three.postProcessing) {
+                gsap.to(this.three.postProcessing.gradientPass.uniforms.color1.value, {
+                    r: newColor.r * 0.01,
+                    g: newColor.g * 0.01,
+                    b: newColor.b * 0.01,
+                    duration: Math.random() * 6 + 3,
+                    // ease: Sine.easeInOut,
+                });
+            }
 
 
             // Character color
@@ -178,9 +183,20 @@ export default class Sketch {
 
     // GROUND PLANE ---------------------------------------------------------------------------------------------
     addGround() {
+        let texture = new THREE.TextureLoader().load(
+            'textures/floor-03.png',
+            function (tex) {
+                tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(200, 200);
+            }
+        );
+
+
+
         const floorMaterial = new THREE.MeshPhongMaterial({
             color: 0x999999,
-            depthWrite: true
+            depthWrite: true,
+            map: texture
         });
 
         this.floor = new THREE.Mesh(
@@ -192,11 +208,11 @@ export default class Sketch {
         this.floor.receiveShadow = true;
         this.three.scene.add(this.floor);
 
-        const grid = new THREE.GridHelper(20000, 200, 0xffffff, 0xffffff);
-        grid.material.opacity = 1;
-        grid.material.transparent = true;
+        // const grid = new THREE.GridHelper(20000, 200, 0xffffff, 0xffffff);
+        // grid.material.opacity = 1;
+        // grid.material.transparent = true;
 
-        this.three.scene.add(grid);
+        // this.three.scene.add(grid);
     }
 
 

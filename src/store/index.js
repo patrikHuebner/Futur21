@@ -7,7 +7,7 @@ export default createStore({
     frameCount: 0,
     global: {
       usePostProcessing: true,
-      antialiasing: true,
+      antialiasing: false,
       retinaResolution: true,
       pixelRatio: 1,
       shadows: true,
@@ -18,10 +18,6 @@ export default createStore({
       position: { x: 25, y: 10, z: 25, fov: 60 },
       rotation: { x: 0, y: 0, z: 0 },
       target: { x: -1.9988377007757225, y: 8.263792936014585, z: -1.2845939629740473 },
-
-      // position: { x: 41.31450763329557, y: 15.014963509830297, z: 34.039028154147104, fov: 40 },
-      // rotation: { x: -0.30505416758629605, y: 0.8666463345954784, z: 0.23553714393047773 },
-      // target: { x: -1.9988377007757225, y: 8.263792936014585, z: -1.2845939629740473 },
       keepControlsAboveGround: true,
     },
     colors: {

@@ -6,6 +6,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
 
 export default class PostProcessing {
@@ -86,6 +87,13 @@ export default class PostProcessing {
         }
         this.vignettePass = new ShaderPass(this.vignetteShader);
         this.composer.addPass(this.vignettePass);
+
+
+        // //
+        // this.fxaaPass = new ShaderPass(FXAAShader);
+        // this.fxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * this.store.state.global.pixelRatio);
+        // this.fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * this.store.state.global.pixelRatio);
+        // this.composer.addPass(this.fxaaPass);
 
     }
 
