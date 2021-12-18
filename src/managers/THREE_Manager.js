@@ -48,9 +48,6 @@ export default class THREE_Manager {
         // Initialize the actual sketch
         this.sketch = new Sketch({ threeManager: this });
 
-        // // Load HDRI file
-        // this.loadHDRI_fromSingleFile('../HDRI/adams_place_bridge_4k.hdr');
-
         // Start the animation loop
         this.startAnimationLoop();
 
@@ -272,32 +269,6 @@ export default class THREE_Manager {
     }
 
 
-
-    // LOAD HDR FROM A SINGLE FILE  ---------------------------------------------------------------------------------------------
-    loadHDRI_fromSingleFile(hdrFile) {
-        return new Promise(resolve => {
-            this.envMap = null;
-            let that = this;
-            this.pmremGenerator = new THREE.PMREMGenerator(this.renderer);
-            this.pmremGenerator.compileEquirectangularShader();
-            new RGBELoader()
-                .setDataType(THREE.UnsignedByteType)
-                .setPath('../HDRI/')
-                .load(hdrFile, function (texture) {
-                    var envMap = that.pmremGenerator.fromEquirectangular(texture).texture;
-
-                    // that.scene.background = envMap;
-                    that.scene.environment = envMap;
-                    that.envMap = envMap;
-
-                    texture.dispose();
-                    that.pmremGenerator.dispose();
-
-                    resolve('OK');
-                });
-            // this.pmremGenerator.compileEquirectangularShader();
-        });
-    }
 
 
 

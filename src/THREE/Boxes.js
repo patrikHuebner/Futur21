@@ -15,19 +15,68 @@ export default class Boxes {
         this.sketch = args.sketch;
 
         // Parameters
-        this.textureLoader = new THREE.TextureLoader();
         this.boxSize = 20;
         this.boxes = [];
-        this.loopIteration = 1;
 
         // Init
         this.init();
     }
 
     init() {
-        this.addMainBoxes();
-        this.addSecondaryBoxes();
+        this.loadTextures().then(() => {
+            this.addMainBoxes();
+            this.addSecondaryBoxes();
+        })
     }
+
+
+
+
+    loadTextures() {
+        this.textureLoader = new THREE.TextureLoader();
+        this.textures = [];
+        this.textureCount = 30;
+        let that = this;
+
+        return new Promise(resolve => {
+            for (let i = 0; i < this.textureCount; i++) {
+                let currentTexture = this.textureLoader.load(
+                    'textures/' + i + '.png',
+                    function () {
+                        // Add to texture arrray
+                        that.textures.push(currentTexture);
+
+                        // Initialize the given texture ahead of time to improve texture load on first visibility
+                        that.three.renderer.initTexture(currentTexture);
+
+                        // When all textures have been loaded, resolve...
+                        if (i == that.textureCount - 1) {
+                            resolve('All textures loaded');
+                        }
+                    }
+                );
+            }
+        });
+    }
+
+
+    // GENERATE A NEW POSITION VECTOR ---------------------------------------------------------------------------------------------
+    getNewBoxPosition() {
+        let newPos = new THREE.Vector3(
+            Math.floor(Math.random() * 20 - 10) * 20,
+            Math.floor(Math.random() * 20) * 7 + 10,
+            Math.floor(Math.random() * 20 - 10) * 20
+        );
+
+        // TODO: Make sure the box is not in the exact center and obscures our guy
+
+        newPos.x += this.sketch.character.Position.x;
+        newPos.y += this.sketch.character.Position.y;
+        newPos.z += this.sketch.character.Position.z;
+
+        return newPos;
+    }
+
 
 
 
@@ -44,7 +93,7 @@ export default class Boxes {
 
         for (let i = 0; i < 30; i++) {
             // Material
-            let texture = this.textureLoader.load('textures/' + i + '.png');
+            let texture = this.textures[i];
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
             let boxMaterial_alpha = new THREE.MeshPhongMaterial({
@@ -76,14 +125,12 @@ export default class Boxes {
             const box = new THREE.Mesh(boxGeometry, boxMaterial);
             // box.castShadow = true;
             box.receiveShadow = true;
-            box.position.x = Math.floor(Math.random() * 20 - 10) * 20;
-            box.position.y = Math.floor(Math.random() * 10) * 4 + 10;
-            box.position.z = Math.floor(Math.random() * 20 - 10) * 20;
-
-            // Make sure the box is not in the exact center and obscures our guy
-            if (box.position.x > -20 && box.position.x < -20) {
-                box.position.x = 30;
-            }
+            let boxPos = this.getNewBoxPosition();
+            box.position.x = boxPos.x;
+            box.position.y = boxPos.y;
+            box.position.z = boxPos.z;
+            box.userData.rotation = 1;
+            // box.frustumCulled = false;
 
             // Add box to array and scene
             this.three.scene.add(box);
@@ -112,14 +159,12 @@ export default class Boxes {
             const box = new THREE.Mesh(boxGeometry, boxMaterial);
             box.castShadow = true;
             box.receiveShadow = true;
-            box.position.x = Math.floor(Math.random() * 20 - 10) * 20;
-            box.position.y = Math.floor(Math.random() * 10) * 7 + 10;
-            box.position.z = Math.floor(Math.random() * 20 - 10) * 20;
 
-            // Make sure the box is not in the exact center and obscures our guy
-            if (box.position.x > -20 && box.position.x < -20) {
-                box.position.x = 30;
-            }
+            let boxPos = this.getNewBoxPosition();
+            box.position.x = boxPos.x;
+            box.position.y = boxPos.y;
+            box.position.z = boxPos.z;
+            box.userData.rotation = 1;
 
             // Add box to array and scene
             this.three.scene.add(box);
@@ -130,19 +175,10 @@ export default class Boxes {
 
 
 
+
+    // BOXES: MOVE A SINGLE BOX TO A NEW POSITION ---------------------------------------------------------------------------------------------
     moveSingleBox(box) {
-        let newPos = new THREE.Vector3(
-            Math.floor(Math.random() * 20 - 10) * 20,
-            Math.floor(Math.random() * 20) * 7 + 10,
-            Math.floor(Math.random() * 20 - 10) * 20
-        );
-
-        newPos.x += this.sketch.character.Position.x;
-        newPos.y += this.sketch.character.Position.y;
-        newPos.z += this.sketch.character.Position.z;
-
-        // TODO: Make sure the box is not in the exact center and obscures our guy
-
+        let newPos = this.getNewBoxPosition();
 
         gsap.to(box.scale, {
             y: random(1, 3),
@@ -161,34 +197,27 @@ export default class Boxes {
             }
         });
 
-        // gsap.to(box.rotation, {
-        //     z: radians(this.loopIteration * 360),
-        //     duration: Math.random() * 4 + 1,
-        //     ease: Sine.easeInOut,
-        // });
+        gsap.to(box.rotation, {
+            z: radians(box.userData.rotation * 360),
+            duration: Math.random() * 2 + 2,
+            ease: Sine.easeInOut,
+            onComplete: () => {
+                box.userData.rotation++;
+            }
+        });
 
-        this.loopIteration++;
     }
 
 
 
-    // BOXES: UPDATE ---------------------------------------------------------------------------------------------
+
+
+    // BOXES: UPDATE ALL POSITIONS ---------------------------------------------------------------------------------------------
     updateBoxPositions() {
         for (let index in this.boxes) {
             let child = this.boxes[index];
 
-            let newPos = new THREE.Vector3(
-                Math.floor(Math.random() * 20 - 10) * 20,
-                Math.floor(Math.random() * 20) * 7 + 10,
-                Math.floor(Math.random() * 20 - 10) * 20
-            );
-
-            newPos.x += this.sketch.character.Position.x;
-            newPos.y += this.sketch.character.Position.y;
-            newPos.z += this.sketch.character.Position.z;
-
-            // TODO: Make sure the box is not in the exact center and obscures our guy
-
+            let newPos = this.getNewBoxPosition();
 
             gsap.to(child.scale, {
                 y: random(1, 3),
@@ -205,43 +234,14 @@ export default class Boxes {
             });
 
             gsap.to(child.rotation, {
-                z: radians(this.loopIteration * 360),
+                z: radians(child.userData.rotation * 360),
                 duration: Math.random() * 4 + 1,
                 ease: Sine.easeInOut,
+                onComplete: () => {
+                    child.userData.rotation++;
+                }
             });
-
-
-
-
-            // let dummy = { x: 0 };
-            // gsap.to(dummy, {
-            //     x: 1,
-            //     duration: 5,
-            //     onComplete: () => {
-
-            //         let idealPosition = this.character.thirdPersonCamera.calculateIdealOffset();
-            //         let idealLookAt = this.character.thirdPersonCamera.calculateIdealLookat();
-            //         gsap.to(this.three.camera.position, {
-            //             x: idealPosition.x,
-            //             y: idealPosition.y,
-            //             z: idealPosition.z,
-            //             duration: 3,
-            //             onUpdate: () => {
-            //                 this.three.camera.lookAt(idealLookAt);
-            //                 this.three.camera.updateProjectionMatrix();
-            //             },
-            //             onComplete: () => {
-            //                 this.rotateCamera = false;
-            //                 this.manualCameraAnimation = false;
-            //             }
-            //         });
-
-            //     }
-            // });
-
         }
-
-        this.loopIteration++;
     }
 
 
