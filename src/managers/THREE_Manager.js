@@ -170,8 +170,8 @@ export default class THREE_Manager {
         this.camera.updateProjectionMatrix();
 
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        if (this.store.state.global.usePostProcessing) {
-            this.postProcessing.composer.setSize(window.innerWidth, window.innerHeight);
+        if (this.postProcessing) {
+            this.postProcessing.resize();
         }
     }
 

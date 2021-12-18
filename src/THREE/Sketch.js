@@ -1,10 +1,11 @@
 import * as THREE from 'three';
+import { gsap, Sine, Back } from 'gsap';
 import { random, hexToRgb, map } from '@/utils/utils.js';
 import { useStore } from "vuex";
 import Lights from './Lights.js';
 import Character from './Character.js';
 import Boxes from './Boxes.js';
-import { gsap, Sine, Back } from 'gsap';
+import RayCaster from './RayCaster.js';
 
 export default class Sketch {
 
@@ -51,6 +52,12 @@ export default class Sketch {
             sketch: this,
         });
 
+        // Init RayCaster
+        this.rayCaster = new RayCaster({
+            threeManager: this.three,
+            sketch: this,
+        });
+
         // Add ground plane
         this.addGround();
 
@@ -69,6 +76,10 @@ export default class Sketch {
 
         if (this.lights) {
             this.lights.update();
+        }
+
+        if (this.rayCaster) {
+            this.rayCaster.update();
         }
 
         // this.rotateScene();

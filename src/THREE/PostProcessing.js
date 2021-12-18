@@ -91,11 +91,19 @@ export default class PostProcessing {
 
 
 
+    resize() {
+        this.composer.setSize(window.innerWidth, window.innerHeight);
+        this.gradientPass.material.uniforms['resolution'].value = new THREE.Vector2(window.innerWidth * this.store.state.global.pixelRatio, window.innerHeight * this.store.state.global.pixelRatio);
+        this.vignettePass.material.uniforms['resolution'].value = new THREE.Vector2(window.innerWidth * this.store.state.global.pixelRatio, window.innerHeight * this.store.state.global.pixelRatio);
+    }
+
+
+
     update() {
         const delta = this.three.clock.getDelta();
 
         if (this.fireflyPass) {
-            this.fireflyPass.material.uniforms['time'].value = 0.005*this.store.state.frameCount;
+            this.fireflyPass.material.uniforms['time'].value = 0.005 * this.store.state.frameCount;
         }
     }
 
