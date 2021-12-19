@@ -21,13 +21,15 @@ export default class Character {
         // Args
         this.three = args.threeManager;
         this.sketch = args.sketch;
+        this.position = args.position;
         this.animations = {};
         this.decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0);
         this.acceleration = new THREE.Vector3(1, 0.25, 150.0);
         this.velocity = new THREE.Vector3(0, 0, 0);
-        this.position = new THREE.Vector3();
+        this.userControlled = args.userControlled;
         this.cameraOffset = new THREE.Vector3(-15, 20, -30);
         this.cameraLookat = new THREE.Vector3(0, 10, 50);
+        this.cameraTurnSpeed = 0.3;
         this.interactionTimeout = null;
 
         // Init
@@ -38,16 +40,18 @@ export default class Character {
 
     init() {
         // Init Input
-        this.input = new BasicCharacterControllerInput();
+        this.input = new BasicCharacterControllerInput(this.userControlled);
 
         // Init State Machine
         this.stateMachine = new CharacterFSM(this);
 
         // Set up Third person camera
-        this.thirdPersonCamera = new ThirdPersonCamera({
-            camera: this.three.camera,
-            target: this,
-        });
+        if (this.userControlled) {
+            this.thirdPersonCamera = new ThirdPersonCamera({
+                camera: this.three.camera,
+                target: this,
+            });
+        }
 
         // Load model and animations
         this.loadModels();
@@ -65,6 +69,7 @@ export default class Character {
         }
         return this.target.quaternion;
     }
+
 
 
     update() {
@@ -182,6 +187,7 @@ export default class Character {
             });
 
             this.target = fbx;
+            this.target.position.set(this.position.x, this.position.y, this.position.z);
             this.target.children[2].material.emissive = new THREE.Color(0xCCCCCC);
             this.three.scene.add(this.target);
 
@@ -688,7 +694,8 @@ class PushButtonState extends State {
 
 // CHARACTER CONTROLLER INPUT ---------------------------------------------------------------------------------------------
 class BasicCharacterControllerInput {
-    constructor() {
+    constructor(isUserControlled) {
+        this.isUserControlled = isUserControlled;
         this.init();
     }
 
@@ -701,8 +708,10 @@ class BasicCharacterControllerInput {
             space: false,
             shift: false,
         };
-        document.addEventListener('keydown', (e) => this.onKeyDown(e), false);
-        document.addEventListener('keyup', (e) => this.onKeyUp(e), false);
+        if (this.isUserControlled) {
+            document.addEventListener('keydown', (e) => this.onKeyDown(e), false);
+            document.addEventListener('keyup', (e) => this.onKeyUp(e), false);
+        }
     }
 
     onKeyDown(event) {
@@ -821,8 +830,7 @@ class ThirdPersonCamera {
             const idealLookat = this.calculateIdealLookat();
 
             // Framerate independent coefficient for lerping
-            const turnSpeed = 0.3;
-            const t = 1.0 - Math.pow(0.001, delta * turnSpeed);
+            const t = 1.0 - Math.pow(0.001, delta * this.target.cameraTurnSpeed);
 
             this.currentPosition.lerp(idealOffset, t);
             this.currentLookat.lerp(idealLookat, t);

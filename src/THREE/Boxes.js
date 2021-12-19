@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { useStore } from "vuex";
 import { gsap, Sine, Back } from 'gsap';
 import { radians, random } from '@/utils/utils.js';
-
+const glsl = require('glslify');
 
 export default class Boxes {
 
@@ -26,8 +26,16 @@ export default class Boxes {
         this.loadTextures().then(() => {
             this.addMainBoxes();
             this.addSecondaryBoxes();
+            this.addInteractionBox();
             this.initBoxMovement();
         })
+    }
+
+
+    update() {
+        if (this.shaderMaterial != undefined) {
+            this.shaderMaterial.uniforms['time'].value = 0.01 * (Date.now() - this.three.start);
+        }
     }
 
 
@@ -67,7 +75,7 @@ export default class Boxes {
 
                         // Increment counter for each successfully loaded texture
                         loadedTextures++;
-                        
+
                         // When all textures have been loaded, resolve...
                         if (loadedTextures == that.textureCount) {
                             resolve('All textures loaded');
@@ -108,6 +116,101 @@ export default class Boxes {
     }
 
 
+
+
+
+    addInteractionBox() {
+        // let material = new THREE.MeshBasicMaterial({
+        //     color: 0xffffff
+        // });
+
+
+        // ShaderMaterial
+        const uniforms = {
+            time: { type: "f", value: 0 },
+            scale: { type: "f", value: 1.5 },
+        };
+        this.shaderMaterial = new THREE.ShaderMaterial({
+            uniforms: uniforms,
+            vertexShader: glsl(require('./shader/vertex.glsl').default),
+            fragmentShader: glsl(require('./shader/zebra-fragment.glsl').default),
+        });
+
+        let boxSize = 1;
+
+        let geometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+        this.interactionBox = new THREE.Mesh(geometry, this.shaderMaterial);
+        this.interactionBox.position.x = 0;
+        this.interactionBox.position.y = -10;
+        this.interactionBox.position.z = 0;
+
+        this.three.scene.add(this.interactionBox);
+    }
+
+
+
+    interactionBoxAnimation() {
+        // Set new shader scale
+        this.shaderMaterial.uniforms.scale.value = random(0.2, 7);
+
+        // Re-Scale box correctly
+        this.interactionBox.scale.x = 1;
+        this.interactionBox.scale.y = 1;
+        this.interactionBox.scale.z = 1;
+
+        // Determine position of hand
+        let handPosition = new THREE.Vector3(0, 0, 15);
+        handPosition.applyQuaternion(this.sketch.character.Rotation);
+        handPosition.add(this.sketch.character.position);
+
+        // Move box into place ahead of time
+        this.interactionBox.position.x = handPosition.x;
+        this.interactionBox.position.y = -10;
+        this.interactionBox.position.z = handPosition.z;
+
+
+
+        // Show the box at correct height
+        gsap.to(this.interactionBox.position, {
+            y: 13,
+            delay: 0,
+            duration: 2,
+            ease: Back.easeInOut,
+        });
+
+        // Rotate box #1
+        gsap.to(this.interactionBox.rotation, {
+            y: radians(-180),
+            delay: 2.7,
+            duration: 1,
+        });
+        // Rotate box #2
+        gsap.to(this.interactionBox.rotation, {
+            z: radians(-180),
+            delay: 3.4,
+            duration: 1,
+        });
+
+
+
+        // Rotate box #3
+        gsap.to(this.interactionBox.rotation, {
+            x: radians(0),
+            y: radians(0),
+            z: radians(0),
+            delay: 5.5,
+            duration: 0,
+        });
+        // Scale box
+        gsap.to(this.interactionBox.scale, {
+            x: 4,
+            y: 4,
+            z: 4,
+            delay: 5.8,
+            duration: 2,
+        });
+
+    }
 
 
 

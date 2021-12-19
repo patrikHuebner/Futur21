@@ -6,6 +6,7 @@ import Lights from './Lights.js';
 import Character from './Character.js';
 import Boxes from './Boxes.js';
 import RayCaster from './RayCaster.js';
+import AI from './AI.js';
 
 export default class Sketch {
 
@@ -19,9 +20,10 @@ export default class Sketch {
         // Animation
         this.mixer = null;
         this.clock = new THREE.Clock();
-        this.manualCameraAnimation = false;
-        this.rotateCamera = false;
         this.nextColor = null;
+        this.cameraTimeout = null;
+        this.triggerActive = false;
+
 
         // Init
         this.init();
@@ -44,6 +46,8 @@ export default class Sketch {
         this.character = new Character({
             threeManager: this.three,
             sketch: this,
+            position: new THREE.Vector3(0, 0, 0),
+            userControlled: true,
         });
 
         // Init Boxes
@@ -57,6 +61,13 @@ export default class Sketch {
             threeManager: this.three,
             sketch: this,
         });
+
+        // Init AI
+        this.AI = new AI({
+            threeManager: this.three,
+            sketch: this,
+        });
+
 
         // Add ground plane
         this.addGround();
@@ -74,6 +85,10 @@ export default class Sketch {
             this.character.update();
         }
 
+        if (this.boxes) {
+            this.boxes.update();
+        }
+
         if (this.lights) {
             this.lights.update();
         }
@@ -82,7 +97,9 @@ export default class Sketch {
             this.rayCaster.update();
         }
 
-        // this.rotateScene();
+        if (this.AI) {
+            this.AI.update();
+        }
     }
 
 
@@ -104,7 +121,7 @@ export default class Sketch {
 
 
     reactToMouseMove(e) {
-        if (this.character) {
+        if (this.character && !this.triggerActive) {
             let mouseCoord = {
                 x: e.offsetX,
                 y: e.offsetY
@@ -122,12 +139,22 @@ export default class Sketch {
 
 
     triggerInteractionEvent() {
+        this.triggerActive = true;
+
+        // Move camera into front of character
+        this.character.cameraOffset = new THREE.Vector3(2, 15, 30);
+        this.character.cameraLookat = new THREE.Vector3(0, 10, 0);
+
+        // Trigger interaction box animation
+        this.boxes.interactionBoxAnimation();
+
         clearTimeout(this.interactionTimeout);
         this.interactionTimeout = setTimeout(() => {
-
             // Random color
             this.nextColor = this.store.state.colors.primary[Math.floor(random(0, this.store.state.colors.primary.length))];
             let newColor = hexToRgb(this.nextColor);
+
+
 
             // PostProcessing Color
             if (this.three.postProcessing) {
@@ -140,7 +167,6 @@ export default class Sketch {
                 });
             }
 
-
             // Character color
             gsap.to(this.character.target.children[2].material.emissive, {
                 r: newColor.r * 0.01,
@@ -150,30 +176,19 @@ export default class Sketch {
                 // ease: Sine.easeInOut,
             });
 
+            clearTimeout(this.cameraTimeout);
+            this.cameraTimeout = setTimeout(() => {
+                // Move camera back into position
+                this.character.cameraOffset = new THREE.Vector3(-15, 20, -30);
+                this.character.cameraLookat = new THREE.Vector3(0, 10, 50);
+                this.triggerActive = false;
+            }, 2000);
+
             // Update boxes
             this.boxes.updateBoxPositions();
-        }, 3000);
+        }, 6000);
     }
 
-
-
-
-
-
-
-    // SCENE: ROTATE ---------------------------------------------------------------------------------------------
-    rotateScene() {
-        if (this.rotateCamera) {
-            let period = 5;
-            let matrix = new THREE.Matrix4();
-            matrix.set(this.three.camera.position.x * this.character.cameraOffset.x, this.three.camera.position.y * this.character.cameraOffset.y, this.three.camera.position.z * this.character.cameraOffset.z, 0)
-            matrix.makeRotationY(this.clock.getDelta() * 1 * Math.PI / period);
-            // Apply matrix like this to rotate the camera.
-            this.three.camera.position.applyMatrix4(matrix);
-            // Make camera look at the box.
-            this.three.camera.lookAt(this.character.position.x + this.character.cameraLookat.x, this.character.position.y + this.character.cameraLookat.y, this.character.position.z);
-        }
-    }
 
 
 
