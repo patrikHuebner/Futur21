@@ -19,7 +19,6 @@ export default class Sketch {
 
         // Animation
         this.mixer = null;
-        this.clock = new THREE.Clock();
         this.nextColor = null;
         this.cameraTimeout = null;
         this.triggerActive = false;
@@ -206,8 +205,6 @@ export default class Sketch {
             }
         );
 
-
-
         const floorMaterial = new THREE.MeshPhongMaterial({
             color: 0x999999,
             depthWrite: true,
@@ -222,12 +219,6 @@ export default class Sketch {
         this.floor.rotation.x = - Math.PI / 2;
         this.floor.receiveShadow = true;
         this.three.scene.add(this.floor);
-
-        // const grid = new THREE.GridHelper(20000, 200, 0xffffff, 0xffffff);
-        // grid.material.opacity = 1;
-        // grid.material.transparent = true;
-
-        // this.three.scene.add(grid);
     }
 
 

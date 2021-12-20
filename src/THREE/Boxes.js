@@ -120,11 +120,6 @@ export default class Boxes {
 
 
     addInteractionBox() {
-        // let material = new THREE.MeshBasicMaterial({
-        //     color: 0xffffff
-        // });
-
-
         // ShaderMaterial
         const uniforms = {
             time: { type: "f", value: 0 },
@@ -142,6 +137,7 @@ export default class Boxes {
         this.interactionBox = new THREE.Mesh(geometry, this.shaderMaterial);
         this.interactionBox.position.x = 0;
         this.interactionBox.position.y = -10;
+        this.interactionBox.castShadow = true;
         this.interactionBox.position.z = 0;
 
         this.three.scene.add(this.interactionBox);

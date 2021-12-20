@@ -9,8 +9,6 @@ import { useStore } from "vuex";
 
 
 
-
-
 // CHARACTER ---------------------------------------------------------------------------------------------
 export default class Character {
 
@@ -31,6 +29,8 @@ export default class Character {
         this.cameraLookat = new THREE.Vector3(0, 10, 50);
         this.cameraTurnSpeed = 0.3;
         this.interactionTimeout = null;
+        this.targetLocation = null;
+        this.targetAngle = null;
 
         // Init
         this.init();
@@ -120,7 +120,7 @@ export default class Character {
         if (!this.input.keys.forward && !this.input.keys.backward && this.input.keys.left) {
             // Turn left while standing
             A.set(0, 1, 0);
-            Q.setFromAxisAngle(A, 2.0 * Math.PI * delta * this.acceleration.y);
+            Q.setFromAxisAngle(A, 1.0 * Math.PI * delta * this.acceleration.y);
             R.multiply(Q);
         }
         else if (this.input.keys.left) {
@@ -132,7 +132,7 @@ export default class Character {
         if (!this.input.keys.forward && !this.input.keys.backward && this.input.keys.right) {
             // Turn right while standing
             A.set(0, 1, 0);
-            Q.setFromAxisAngle(A, 2.0 * -Math.PI * delta * this.acceleration.y);
+            Q.setFromAxisAngle(A, 1.0 * -Math.PI * delta * this.acceleration.y);
             R.multiply(Q);
         } else if (this.input.keys.right) {
             // Turn right while walking or running
@@ -174,7 +174,105 @@ export default class Character {
         if (this.thirdPersonCamera) {
             this.thirdPersonCamera.Update(delta);
         }
+
+        // If there is "Walk to"-vector present...
+        if (this.targetLocation != null) {
+            this.updateWalkTo();
+        }
     }
+
+
+
+    walkTo(loc) {
+        // Set target location
+        this.targetLocation = loc;
+
+
+        // Determine angle from character position to target location
+        let a = this.targetLocation.x - this.position.x;
+        let b = this.targetLocation.z - this.position.z;
+        let c = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+
+        this.targetAngle = Math.acos(
+            (Math.pow(b, 2) + Math.pow(c, 2) - Math.pow(a, 2))
+            /
+            (2 * b * c)
+        );
+
+        // Adjust angle for location of character
+        if (this.position.x - this.targetLocation.x > 0) {
+            this.targetAngle *= -1;
+        }
+
+        // Transform Euler/Radian data into Quaternion
+        let euler = new THREE.Euler(0, this.targetAngle, 0);
+        let quaternion = new THREE.Quaternion();
+        quaternion.setFromEuler(euler);
+        this.targetQuaternion = quaternion;
+    }
+
+
+    updateWalkTo() {
+        // STEP 1
+        // Walk forward and determine distance to location
+        let distanceToLoc = this.position.distanceTo(this.targetLocation);
+        this.input.keys.forward = true;
+        if (distanceToLoc < 50) {
+            this.input.keys.forward = false;
+            this.targetLocation = null;
+
+            setTimeout(() => {
+                let loc = new THREE.Vector3(Math.random() * 400, 0, Math.random() * 400);
+                this.locMesh.position.x = loc.x;
+                this.locMesh.position.y = 10;
+                this.locMesh.position.z = loc.z;
+                this.walkTo(loc);
+            }, 3000);
+
+            return;
+        }
+
+
+        // STEP 2
+        // Find correct rotation
+        
+        let variationThreshold = 0.001; // used to find a "sweet-spot" for the rotation of the turn
+
+        // Turn right direction
+        if (this.targetQuaternion.y < 0) {
+            if (this.Rotation.y > this.targetQuaternion.y + variationThreshold) {
+                this.input.keys.right = true;
+                this.input.keys.left = false;
+            } else if (this.Rotation.y < this.targetQuaternion.y - variationThreshold) {
+                this.input.keys.left = true;
+                this.input.keys.right = false;
+            }
+            else {
+                this.input.keys.right = false;
+                this.input.keys.left = false;
+            }
+        }
+
+
+        // Turn left direction
+        if (this.targetQuaternion.y > 0) {
+            if (this.Rotation.y < this.targetQuaternion.y - variationThreshold) {
+                this.input.keys.right = false;
+                this.input.keys.left = true;
+            } else if (this.Rotation.y > this.targetQuaternion.y + variationThreshold) {
+                this.input.keys.left = false;
+                this.input.keys.right = true;
+            }
+            else {
+                this.input.keys.right = false;
+                this.input.keys.left = false;
+            }
+        }
+
+    }
+
+
+
 
 
     loadModels() {
@@ -219,8 +317,32 @@ export default class Character {
             loader.load('Turn_Right.fbx', (a) => { OnLoad('turnRight', a); });
             loader.load('Turn_Left.fbx', (a) => { OnLoad('turnLeft', a); });
             loader.load('Button_Pushing.fbx', (a) => { OnLoad('pushButton', a); });
+
+            // Initialize "walk to" geometry
+            this.initWalkTo();
         });
     }
+
+
+
+    initWalkTo() {
+        let loc = new THREE.Vector3(-70, 0, 150);
+
+        let locM = new THREE.MeshBasicMaterial({ 
+            color: 0xff0000,
+            transparent: true,
+            opacity: 0
+        });
+        let locG = new THREE.BoxGeometry(15, 15, 15);
+        this.locMesh = new THREE.Mesh(locG, locM);
+        this.locMesh.position.x = loc.x;
+        this.locMesh.position.y = 10;
+        this.locMesh.position.z = loc.z;
+
+        this.three.scene.add(this.locMesh);
+        this.walkTo(loc);
+    }
+
 
 }
 
