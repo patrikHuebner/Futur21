@@ -22,6 +22,8 @@ export default class Sketch {
         this.nextColor = null;
         this.cameraTimeout = null;
         this.triggerActive = false;
+        this.autoMoveDelay = 20000;
+        this.autoMoveTimer = null;
 
 
         // Init
@@ -48,6 +50,9 @@ export default class Sketch {
             position: new THREE.Vector3(0, 0, 0),
             userControlled: true,
         });
+        // Setup character auto movement
+        this.init_autoMove();
+
 
         // Init Boxes
         this.boxes = new Boxes({
@@ -107,6 +112,61 @@ export default class Sketch {
 
 
     // METHODS ---------------------------------------------------------------------------------------------
+    init_autoMove() {
+        this.createAutoMoveTimer();
+        this.autoKeyPresses = 0;
+        document.addEventListener('keydown', (e) => this.autoMoveKeyDown(e), false);
+        document.addEventListener('keyup', (e) => this.autoMoveKeyUp(e), false);
+    }
+    createAutoMoveTimer() {
+        this.autoMoveTimer = setTimeout(() => {
+            if (this.character) {
+                let loc = new THREE.Vector3(Math.random() * 400, 0, Math.random() * 400);
+                this.character.locMesh.position.x = loc.x;
+                this.character.locMesh.position.y = 10;
+                this.character.locMesh.position.z = loc.z;
+                this.character.walkTo(loc);
+            }
+        }, this.autoMoveDelay);
+    }
+    autoMoveKeyDown(e) {
+        if (!e.repeat) {
+            if (e.keyCode == 38 || e.keyCode == 87 || e.keyCode == 37 || e.keyCode == 65 || e.keyCode == 40 || e.keyCode == 83 || e.keyCode == 39 || e.keyCode == 68) {
+                this.autoKeyPresses++;
+            }
+        }
+
+        if (this.character.autoMove) {
+            this.character.input.keys.shift = false;
+        }
+
+        this.character.cameraTurnSpeed = 0.3;
+        this.character.cameraOffset = new THREE.Vector3(-15, 20, -30);
+        this.character.cameraLookat = new THREE.Vector3(0, 10, 50);
+        clearTimeout(this.character.interactionTimeout);
+        clearTimeout(this.character.motionTimeout);
+        clearTimeout(this.autoMoveTimer);
+        this.character.autoMove = false;
+    }
+    autoMoveKeyUp(e) {
+        if (e.keyCode == 38 || e.keyCode == 87 || e.keyCode == 37 || e.keyCode == 65 || e.keyCode == 40 || e.keyCode == 83 || e.keyCode == 39 || e.keyCode == 68) {
+            this.autoKeyPresses--;
+        }
+
+        if (this.autoKeyPresses == 0) {
+            this.character.input.keys.forward = false;
+            this.character.input.keys.backward = false;
+            this.character.input.keys.left = false;
+            this.character.input.keys.right = false;
+            this.createAutoMoveTimer();
+        }
+    }
+
+
+
+
+
+
     init_scene() {
         // Background
         this.three.scene.background = new THREE.Color(0xa0a0a0);
@@ -208,7 +268,7 @@ export default class Sketch {
         const floorMaterial = new THREE.MeshPhongMaterial({
             color: 0x999999,
             depthWrite: true,
-            map: texture
+            map: texture,
         });
 
         this.floor = new THREE.Mesh(

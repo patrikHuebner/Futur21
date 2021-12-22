@@ -166,9 +166,11 @@ export default class Boxes {
 
 
 
+
+
         // Show the box at correct height
         gsap.to(this.interactionBox.position, {
-            y: 13,
+            y: 13.5,
             delay: 0,
             duration: 2,
             ease: Back.easeInOut,
@@ -177,13 +179,13 @@ export default class Boxes {
         // Rotate box #1
         gsap.to(this.interactionBox.rotation, {
             y: radians(-180),
-            delay: 2.7,
+            delay: 3.2,
             duration: 1,
         });
         // Rotate box #2
         gsap.to(this.interactionBox.rotation, {
             z: radians(-180),
-            delay: 3.4,
+            delay: 3.9,
             duration: 1,
         });
 
@@ -194,7 +196,7 @@ export default class Boxes {
             x: radians(0),
             y: radians(0),
             z: radians(0),
-            delay: 5.5,
+            delay: 6,
             duration: 0,
         });
         // Scale box
@@ -202,9 +204,51 @@ export default class Boxes {
             x: 4,
             y: 4,
             z: 4,
-            delay: 5.8,
+            delay: 6.3,
             duration: 2,
         });
+
+
+
+        // // Show the box at correct height
+        // gsap.to(this.interactionBox.position, {
+        //     y: 13,
+        //     delay: 0,
+        //     duration: 2,
+        //     ease: Back.easeInOut,
+        // });
+
+        // // Rotate box #1
+        // gsap.to(this.interactionBox.rotation, {
+        //     y: radians(-180),
+        //     delay: 2.7,
+        //     duration: 1,
+        // });
+        // // Rotate box #2
+        // gsap.to(this.interactionBox.rotation, {
+        //     z: radians(-180),
+        //     delay: 3.4,
+        //     duration: 1,
+        // });
+
+
+
+        // // Rotate box #3
+        // gsap.to(this.interactionBox.rotation, {
+        //     x: radians(0),
+        //     y: radians(0),
+        //     z: radians(0),
+        //     delay: 5.5,
+        //     duration: 0,
+        // });
+        // // Scale box
+        // gsap.to(this.interactionBox.scale, {
+        //     x: 4,
+        //     y: 4,
+        //     z: 4,
+        //     delay: 5.8,
+        //     duration: 2,
+        // });
 
     }
 

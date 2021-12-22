@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { useStore } from "vuex";
+import { random } from '@/utils/utils.js';
 
 
 
@@ -28,9 +29,12 @@ export default class Character {
         this.cameraOffset = new THREE.Vector3(-15, 20, -30);
         this.cameraLookat = new THREE.Vector3(0, 10, 50);
         this.cameraTurnSpeed = 0.3;
+        this.moveStartedAtTime = null;
         this.interactionTimeout = null;
+        this.motionTimeout = null;
         this.targetLocation = null;
         this.targetAngle = null;
+        this.autoMove = false;
 
         // Init
         this.init();
@@ -176,7 +180,7 @@ export default class Character {
         }
 
         // If there is "Walk to"-vector present...
-        if (this.targetLocation != null) {
+        if (this.autoMove) {
             this.updateWalkTo();
         }
     }
@@ -184,9 +188,27 @@ export default class Character {
 
 
     walkTo(loc) {
+        //
+        this.moveStartedAtTime = Date.now();
+
+        // Decide if we run or walk
+        let distanceToLoc = this.position.distanceTo(loc);
+        if (distanceToLoc > 100) {
+            let rnd = Math.random();
+            if (rnd <= 0.5) {
+                this.input.keys.shift = true;
+            } else {
+                this.input.keys.shift = false;
+            }
+        } else {
+            this.input.keys.shift = false;
+        }
+
+        // Indicate active autonomous movement
+        this.autoMove = true;
+
         // Set target location
         this.targetLocation = loc;
-
 
         // Determine angle from character position to target location
         let a = this.targetLocation.x - this.position.x;
@@ -212,22 +234,66 @@ export default class Character {
     }
 
 
+    gotoNewDestination() {
+        let loc = new THREE.Vector3(Math.random() * 400, 0, Math.random() * 400);
+        this.locMesh.position.x = loc.x;
+        this.locMesh.position.y = 10;
+        this.locMesh.position.z = loc.z;
+        this.walkTo(loc);
+    }
     updateWalkTo() {
+        let timeElapsed = Date.now() - this.moveStartedAtTime; // A safeguard so that, if anything bad happens, after 20s we reset the guy
+
         // STEP 1
         // Walk forward and determine distance to location
         let distanceToLoc = this.position.distanceTo(this.targetLocation);
         this.input.keys.forward = true;
-        if (distanceToLoc < 50) {
+        if (distanceToLoc < 50 || timeElapsed > 20000) {
             this.input.keys.forward = false;
             this.targetLocation = null;
+            this.autoMove = false;
 
-            setTimeout(() => {
-                let loc = new THREE.Vector3(Math.random() * 400, 0, Math.random() * 400);
-                this.locMesh.position.x = loc.x;
-                this.locMesh.position.y = 10;
-                this.locMesh.position.z = loc.z;
-                this.walkTo(loc);
-            }, 3000);
+            let rnd = Math.floor(random(0, 3));
+            console.log(rnd);
+            if (rnd == 0) {
+                // Stop to ponder
+                // Move camera into front of character
+                this.cameraTurnSpeed = 0.1;
+                this.cameraOffset = new THREE.Vector3(Math.random() * 100, Math.random() * 100, Math.random() * 100);
+                this.cameraLookat = new THREE.Vector3(0, Math.random() * 20, 0);
+
+                this.motionTimeout = setTimeout(() => {
+                    this.cameraTurnSpeed = 0.3;
+                    this.cameraOffset = new THREE.Vector3(-15, 20, -30);
+                    this.cameraLookat = new THREE.Vector3(0, 10, 50);
+                    this.gotoNewDestination();
+                }, 8000);
+            }
+            if (rnd == 1) {
+                if (this.input.keys.shift) {
+                    this.interactionTimeout = setTimeout(() => {
+                        // Push the button
+                        this.stateMachine.SetState('pushButton');
+                        this.motionTimeout = setTimeout(() => {
+                            this.gotoNewDestination();
+                        }, 11000);
+                    }, 500);
+                } else {
+                    this.interactionTimeout = setTimeout(() => {
+                        // Push the button
+                        this.stateMachine.SetState('pushButton');
+                        this.motionTimeout = setTimeout(() => {
+                            this.gotoNewDestination();
+                        }, 11000);
+                    }, 500);
+                }
+            }
+            if (rnd == 2) {
+                // Go to a new destination
+                this.motionTimeout = setTimeout(() => {
+                    this.gotoNewDestination();
+                }, 3000);
+            }
 
             return;
         }
@@ -235,7 +301,7 @@ export default class Character {
 
         // STEP 2
         // Find correct rotation
-        
+
         let variationThreshold = 0.001; // used to find a "sweet-spot" for the rotation of the turn
 
         // Turn right direction
@@ -328,7 +394,7 @@ export default class Character {
     initWalkTo() {
         let loc = new THREE.Vector3(-70, 0, 150);
 
-        let locM = new THREE.MeshBasicMaterial({ 
+        let locM = new THREE.MeshBasicMaterial({
             color: 0xff0000,
             transparent: true,
             opacity: 0
@@ -340,7 +406,7 @@ export default class Character {
         this.locMesh.position.z = loc.z;
 
         this.three.scene.add(this.locMesh);
-        this.walkTo(loc);
+        // this.walkTo(loc);
     }
 
 

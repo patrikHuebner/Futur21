@@ -15,7 +15,7 @@ export default createStore({
       cappedFramerate: 60,
     },
     camera: {
-      position: { x: 25, y: 10, z: 25, fov: 60 },
+      position: { x: 25, y: 10, z: 25, fov: 40 },
       rotation: { x: 0, y: 0, z: 0 },
       target: { x: -1.9988377007757225, y: 8.263792936014585, z: -1.2845939629740473 },
       keepControlsAboveGround: true,
