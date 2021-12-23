@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { useStore } from "vuex";
 import { gsap, Sine, Back } from 'gsap';
 import { radians, random } from '@/utils/utils.js';
-const glsl = require('glslify');
+// const glsl = require('glslify');
 
 export default class Boxes {
 
@@ -33,9 +33,9 @@ export default class Boxes {
 
 
     update() {
-        if (this.shaderMaterial != undefined) {
-            this.shaderMaterial.uniforms['time'].value = 0.01 * (Date.now() - this.three.start);
-        }
+        // if (this.shaderMaterial != undefined) {
+        //     this.shaderMaterial.uniforms['time'].value = 0.01 * (Date.now() - this.three.start);
+        // }
     }
 
 
@@ -58,11 +58,31 @@ export default class Boxes {
     loadTextures() {
         this.textureLoader = new THREE.TextureLoader();
         this.textures = [];
-        this.textureCount = 30;
+        this.diceTextures = [];
+        this.textureCount = 36;
         let that = this;
         let loadedTextures = 0;
 
         return new Promise(resolve => {
+            // Load dice textures
+            for (let i = 0; i < 6; i++) {
+                this.textureLoader.load(
+                    'textures/dice-' + i + '.png',
+                    function (texture) {
+                        // Increment counter for each successfully loaded texture
+                        loadedTextures++;
+
+                        that.diceTextures.push(texture)
+
+                        // When all textures have been loaded, resolve...
+                        if (loadedTextures == that.textureCount) {
+                            resolve('All textures loaded');
+                        }
+                    }
+                );
+            }
+
+            // Load text textures
             for (let i = 0; i < this.textureCount; i++) {
                 let currentTexture = this.textureLoader.load(
                     'textures/' + i + '.png',
@@ -120,21 +140,33 @@ export default class Boxes {
 
 
     addInteractionBox() {
-        // ShaderMaterial
-        const uniforms = {
-            time: { type: "f", value: 0 },
-            scale: { type: "f", value: 1.5 },
-        };
-        this.shaderMaterial = new THREE.ShaderMaterial({
-            uniforms: uniforms,
-            vertexShader: glsl(require('./shader/vertex.glsl').default),
-            fragmentShader: glsl(require('./shader/zebra-fragment.glsl').default),
-        });
+        // // ShaderMaterial
+        // const uniforms = {
+        //     time: { type: "f", value: 0 },
+        //     scale: { type: "f", value: 1.5 },
+        // };
+        // this.shaderMaterial = new THREE.ShaderMaterial({
+        //     uniforms: uniforms,
+        //     vertexShader: glsl(require('./shader/vertex.glsl').default),
+        //     fragmentShader: glsl(require('./shader/zebra-fragment.glsl').default),
+        // });
+
+
+
+        let materials = [];
+        for (let i = 0; i < 6; i++) {
+            let diceMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                map: this.diceTextures[i]
+            });
+            materials.push(diceMaterial);
+        }
+        this.diceMaterial = [materials[0], materials[1], materials[2], materials[3], materials[4], materials[5]];
 
         let boxSize = 1;
 
         let geometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
-        this.interactionBox = new THREE.Mesh(geometry, this.shaderMaterial);
+        this.interactionBox = new THREE.Mesh(geometry, this.diceMaterial);
         this.interactionBox.position.x = 0;
         this.interactionBox.position.y = -10;
         this.interactionBox.castShadow = true;
@@ -146,13 +178,19 @@ export default class Boxes {
 
 
     interactionBoxAnimation() {
-        // Set new shader scale
-        this.shaderMaterial.uniforms.scale.value = random(0.2, 7);
+        // // Set new shader scale
+        // this.shaderMaterial.uniforms.scale.value = random(0.2, 7);
 
         // Re-Scale box correctly
         this.interactionBox.scale.x = 1;
         this.interactionBox.scale.y = 1;
         this.interactionBox.scale.z = 1;
+
+
+        // Re-orient box correctly
+        this.interactionBox.rotation.x = 0;
+        this.interactionBox.rotation.y = 0;
+        this.interactionBox.rotation.z = 0;
 
         // Determine position of hand
         let handPosition = new THREE.Vector3(0, 0, 15);
@@ -178,27 +216,27 @@ export default class Boxes {
 
         // Rotate box #1
         gsap.to(this.interactionBox.rotation, {
-            y: radians(-180),
+            y: radians(random(-360, 360)),
             delay: 3.2,
             duration: 1,
         });
         // Rotate box #2
         gsap.to(this.interactionBox.rotation, {
-            z: radians(-180),
+            z: radians(random(-360, 360)),
             delay: 3.9,
             duration: 1,
         });
 
 
 
-        // Rotate box #3
-        gsap.to(this.interactionBox.rotation, {
-            x: radians(0),
-            y: radians(0),
-            z: radians(0),
-            delay: 6,
-            duration: 0,
-        });
+        // // Rotate box #3
+        // gsap.to(this.interactionBox.rotation, {
+        //     x: radians(random(-360, 360)),
+        //     y: radians(random(-360, 360)),
+        //     z: radians(random(-360, 360)),
+        //     delay: 6,
+        //     duration: 1,
+        // });
         // Scale box
         gsap.to(this.interactionBox.scale, {
             x: 4,

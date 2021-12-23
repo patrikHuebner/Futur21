@@ -12,6 +12,7 @@
   bottom: 30px;
   left: 30px;
   user-select: none;
+  display: none;
 
   a {
     color: #fff;

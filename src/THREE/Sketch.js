@@ -117,6 +117,10 @@ export default class Sketch {
         this.autoKeyPresses = 0;
         document.addEventListener('keydown', (e) => this.autoMoveKeyDown(e), false);
         document.addEventListener('keyup', (e) => this.autoMoveKeyUp(e), false);
+
+        document.addEventListener('touchstart', (e) => this.autoMoveKeyDown(e), false);
+        document.addEventListener('touchend', (e) => this.autoMoveKeyUp(e), false);
+
     }
     createAutoMoveTimer() {
         this.autoMoveTimer = setTimeout(() => {
