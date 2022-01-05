@@ -3,7 +3,7 @@ import { createStore } from 'vuex'
 export default createStore({
   state: {
     verbose: true,
-    enableStats: true,
+    enableStats: false,
     frameCount: 0,
     global: {
       usePostProcessing: true,

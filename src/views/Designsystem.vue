@@ -1,4 +1,6 @@
 <template>
+  <!-- <div style="position: fixed; top: 30px; left: 30px; font-size: 40px; color: #fff; background: #000; padding: 20px" id="debug">Debug view</div> -->
+
   <div id="WEBGL"></div>
 
   <!-- MOBILE ON SCREEN CONTROLS -->

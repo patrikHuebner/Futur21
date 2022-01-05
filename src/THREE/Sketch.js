@@ -135,9 +135,16 @@ export default class Sketch {
     }
     autoMoveKeyDown(e) {
         if (!e.repeat) {
+            // WASD keys
             if (e.keyCode == 38 || e.keyCode == 87 || e.keyCode == 37 || e.keyCode == 65 || e.keyCode == 40 || e.keyCode == 83 || e.keyCode == 39 || e.keyCode == 68) {
                 this.autoKeyPresses++;
             }
+
+            // TouchDesigner special keys
+            if (e.keyCode == 90 || e.keyCode == 67 || e.keyCode == 66 || e.keyCode == 77 || e.keyCode == 75) {
+                this.autoKeyPresses++;
+            }
+
         }
 
         if (this.character.autoMove) {
@@ -153,9 +160,17 @@ export default class Sketch {
         this.character.autoMove = false;
     }
     autoMoveKeyUp(e) {
+        // WASD keys
         if (e.keyCode == 38 || e.keyCode == 87 || e.keyCode == 37 || e.keyCode == 65 || e.keyCode == 40 || e.keyCode == 83 || e.keyCode == 39 || e.keyCode == 68) {
             this.autoKeyPresses--;
         }
+
+        // TouchDesigner special keys
+        if (e.keyCode == 88 || e.keyCode == 86 || e.keyCode == 78 || e.keyCode == 188 || e.keyCode == 76) {
+            this.autoKeyPresses--;
+        }
+
+        // document.getElementById('debug').innerHTML = this.autoKeyPresses;
 
         if (this.autoKeyPresses == 0) {
             this.character.input.keys.forward = false;
@@ -164,6 +179,27 @@ export default class Sketch {
             this.character.input.keys.right = false;
             this.createAutoMoveTimer();
         }
+
+        // // These keys are special keys sent by TouchDesigner
+        // if (e.keyCode == 88 || e.keyCode == 90 || e.keyCode == 67 || e.keyCode == 86 || e.keyCode == 66 || e.keyCode == 78 || e.keyCode == 77 || e.keyCode == 188 || e.keyCode == 76) {
+        //     // Only trigger the timer on release
+        //     if (e.keyCode == 88 || e.keyCode == 86 || e.keyCode == 78 || e.keyCode == 188 || e.keyCode == 76) {
+        //         this.character.input.keys.shift = false;
+        //         clearTimeout(this.character.interactionTimeout);
+        //         clearTimeout(this.character.motionTimeout);
+        //         clearTimeout(this.autoMoveTimer);
+        //         this.createAutoMoveTimer();
+        //     }
+        // } else {
+        //     // This is for normal WASD use
+        //     if (this.autoKeyPresses == 0) {
+        //         this.character.input.keys.forward = false;
+        //         this.character.input.keys.backward = false;
+        //         this.character.input.keys.left = false;
+        //         this.character.input.keys.right = false;
+        //         this.createAutoMoveTimer();
+        //     }
+        // }
     }
 
 

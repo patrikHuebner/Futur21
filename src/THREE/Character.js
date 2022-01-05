@@ -44,7 +44,7 @@ export default class Character {
 
     init() {
         // Init Input
-        this.input = new BasicCharacterControllerInput(this.userControlled);
+        this.input = new BasicCharacterControllerInput(this.userControlled, this);
 
         // Init State Machine
         this.stateMachine = new CharacterFSM(this);
@@ -882,8 +882,9 @@ class PushButtonState extends State {
 
 // CHARACTER CONTROLLER INPUT ---------------------------------------------------------------------------------------------
 class BasicCharacterControllerInput {
-    constructor(isUserControlled) {
+    constructor(isUserControlled, characterObject) {
         this.isUserControlled = isUserControlled;
+        this.characterObject = characterObject;
         this.init();
     }
 
@@ -903,6 +904,9 @@ class BasicCharacterControllerInput {
     }
 
     onKeyDown(event) {
+        // alert('On: '+event.keyCode)
+        //document.getElementById('debug').innerHTML = "On: " + event.keyCode;
+
         switch (event.keyCode) {
             case 38: // up
             case 87: // w
@@ -930,7 +934,48 @@ class BasicCharacterControllerInput {
     }
 
     onKeyUp(event) {
+        //document.getElementById('debug').innerHTML = "Off : " + event.keyCode + "/" + this.characterObject.store.state.frameCount;
+
         switch (event.keyCode) {
+            // TOUCH DESIGNER BEHAVIOR
+            // FORWARD
+            case 90:
+                this.keys.forward = true;
+                break;
+            case 88:
+                this.keys.forward = false;
+                break;
+            // BACKWARD
+            case 67:
+                this.keys.backward = true;
+                break;
+            case 86:
+                this.keys.backward = false;
+                break;
+            // LEFT
+            case 66:
+                this.keys.left = true;
+                break;
+            case 78:
+                this.keys.left = false;
+                break;
+            // RIGHT
+            case 77:
+                this.keys.right = true;
+                break;
+            case 188:
+                this.keys.right = false;
+                break;
+            // SPACE
+            case 76:
+                this.characterObject.stateMachine.SetState('pushButton')
+                break;
+
+
+
+
+
+            // NORMAL BEHAVIOR
             case 38: // up
             case 87: // w
                 this.keys.forward = false;

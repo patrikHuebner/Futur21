@@ -72,6 +72,10 @@ export default class Boxes {
                         // Increment counter for each successfully loaded texture
                         loadedTextures++;
 
+                        // Initialize the given texture ahead of time to improve texture load on first visibility
+                        that.three.renderer.initTexture(texture);
+
+                        // Push texture to array
                         that.diceTextures.push(texture)
 
                         // When all textures have been loaded, resolve...
