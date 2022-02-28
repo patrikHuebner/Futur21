@@ -243,6 +243,7 @@ export default class Character {
     }
     updateWalkTo() {
         let timeElapsed = Date.now() - this.moveStartedAtTime; // A safeguard so that, if anything bad happens, after 20s we reset the guy
+        console.log(timeElapsed)
 
         // STEP 1
         // Walk forward and determine distance to location
@@ -254,7 +255,7 @@ export default class Character {
             this.autoMove = false;
 
             let rnd = Math.floor(random(0, 3));
-            console.log(rnd);
+            // console.log(rnd);
             if (rnd == 0) {
                 // Stop to ponder
                 // Move camera into front of character
@@ -905,7 +906,7 @@ class BasicCharacterControllerInput {
 
     onKeyDown(event) {
         // alert('On: '+event.keyCode)
-        //document.getElementById('debug').innerHTML = "On: " + event.keyCode;
+        // document.getElementById('debug').innerHTML = "On: " + event.keyCode;
 
         switch (event.keyCode) {
             case 38: // up
@@ -934,40 +935,40 @@ class BasicCharacterControllerInput {
     }
 
     onKeyUp(event) {
-        //document.getElementById('debug').innerHTML = "Off : " + event.keyCode + "/" + this.characterObject.store.state.frameCount;
+        // document.getElementById('debug').innerHTML = "Off : " + event.keyCode;
 
         switch (event.keyCode) {
             // TOUCH DESIGNER BEHAVIOR
             // FORWARD
-            case 90:
+            case 121: // Z
                 this.keys.forward = true;
                 break;
-            case 88:
+            case 120: // X
                 this.keys.forward = false;
                 break;
             // BACKWARD
-            case 67:
+            case 99: // C
                 this.keys.backward = true;
                 break;
-            case 86:
+            case 118: // V
                 this.keys.backward = false;
                 break;
             // LEFT
-            case 66:
+            case 98: // B 
                 this.keys.left = true;
                 break;
-            case 78:
+            case 110: // N
                 this.keys.left = false;
                 break;
             // RIGHT
-            case 77:
+            case 109: // M
                 this.keys.right = true;
                 break;
-            case 188:
+            case 44: // ,
                 this.keys.right = false;
                 break;
             // SPACE
-            case 76:
+            case 107: // L
                 this.characterObject.stateMachine.SetState('pushButton')
                 break;
 

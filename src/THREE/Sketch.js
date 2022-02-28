@@ -50,8 +50,8 @@ export default class Sketch {
             position: new THREE.Vector3(0, 0, 0),
             userControlled: true,
         });
-        // Setup character auto movement
-        this.init_autoMove();
+        // // Setup character auto movement
+        // this.init_autoMove();
 
 
         // Init Boxes
